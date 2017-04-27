@@ -1,0 +1,16 @@
+{
+  "db": {
+    "name": "db",
+    "connector": "memory"
+  },
+  "ComposePostgreSQL": {
+    "host": "",
+    "port": 0,
+    "url": "postgres://admin:DQEDXZXARSBHQWBM@sl-us-dal-9-portal.4.dblayer.com:23749/compose",
+    "database": "",
+    "password": "",
+    "name": "ComposePostgreSQL",
+    "user": "",
+    "connector": "postgresql"
+  }
+}
