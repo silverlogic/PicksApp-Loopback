@@ -1,0 +1,4 @@
+applications:
+- name: picksapp-api
+  random-route: true
+  memory: 256M

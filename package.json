@@ -31,5 +31,6 @@
     "url": ""
   },
   "license": "UNLICENSED",
-  "description": "picks-loopback"
+  "description": "picks-loopback",
+  "repository" : "https://github.com/silverlogic/PicksApp-Loopback"
 }
