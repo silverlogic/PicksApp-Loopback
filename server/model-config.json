@@ -14,25 +14,64 @@
     ]
   },
   "User": {
-    "dataSource": "db"
+    "dataSource": "ComposePostgreSQL",
+    "options": {
+      "postgresql": {
+        "scheme": "picksapp",
+        "table": "User"
+      }
+    }
   },
   "AccessToken": {
-    "dataSource": "db",
-    "public": false
+    "dataSource": "ComposePostgreSQL",
+    "public": false,
+    "relations": {
+      "user": {
+        "type": "belongsTo",
+        "model": "User",
+        "foreignKey": "userId"
+      }
+    },
+    "options": {
+      "postgresql": {
+        "scheme": "picksapp",
+        "table": "AccessToken"
+      }
+    }
   },
   "ACL": {
-    "dataSource": "db",
-    "public": false
-  },
-  "RoleMapping": {
-    "dataSource": "db",
+    "dataSource": "ComposePostgreSQL",
     "public": false,
     "options": {
-      "strictObjectIDCoercion": true
+      "postgresql": {
+        "scheme": "picksapp",
+        "table": "ACL"
+      }
+    }
+  },
+  "RoleMapping": {
+    "dataSource": "ComposePostgreSQL",
+    "public": false,
+    "options": {
+      "strictObjectIDCoercion": true,
+      "postgresql": {
+        "scheme": "picksapp",
+        "table": "RoleMapping"
+      }
     }
   },
   "Role": {
-    "dataSource": "db",
-    "public": false
+    "dataSource": "ComposePostgreSQL",
+    "public": false,
+    "options": {
+      "postgresql": {
+        "scheme": "picksapp",
+        "table": "Role"
+      }
+    }
+  },
+  "PicksUser": {
+    "dataSource": "ComposePostgreSQL",
+    "public": true
   }
 }
