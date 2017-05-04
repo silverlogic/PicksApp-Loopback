@@ -1,0 +1,178 @@
+{
+  "name": "PicksUser",
+  "base": "User",
+  "idInjection": true,
+  "options": {
+    "validateUpsert": true,
+    "postgresql": {
+      "scheme": "picksapp",
+      "table": "PicksUser"
+    }
+  },
+  "properties": {
+    "facebookAccessToken": {
+      "type": "string"
+    },
+    "firstName": {
+      "type": "string",
+      "required": true
+    },
+    "lastName": {
+      "type": "string",
+      "required": true
+    },
+    "avatarUrl": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string",
+      "required": true,
+      "index": {
+        "unique": true
+      }
+    },
+    "password": {
+      "type": "string"
+    }
+  },
+  "validations": [],
+  "relations": {},
+  "acls": [
+    {
+      "accessType": "EXECUTE",
+      "principalType": "ROLE",
+      "principalId": "$everyone",
+      "permission": "ALLOW",
+      "property": "loginWithFacebook"
+    },
+    {
+      "accessType": "*",
+      "principalType": "ROLE",
+      "principalId": "$unauthenticated",
+      "permission": "DENY"
+    },
+    {
+      "accessType": "*",
+      "principalType": "ROLE",
+      "principalId": "$authenticated",
+      "permission": "ALLOW"
+    },
+    {
+      "accessType": "EXECUTE",
+      "principalType": "ROLE",
+      "principalId": "$everyone",
+      "permission": "ALLOW",
+      "property": "signupWithFacebook"
+    },
+    {
+      "accessType": "EXECUTE",
+      "principalType": "ROLE",
+      "principalId": "$owner",
+      "permission": "ALLOW",
+      "property": "currentUser"
+    }
+  ],
+  "methods": {
+    "loginWithFacebook": {
+      "accepts": [
+        {
+          "arg": "facebookAccessToken",
+          "type": "string",
+          "required": true,
+          "description": "An access token given from the Facebook SDK for interacting with Facebook's Graph API."
+        }
+      ],
+      "returns": [
+        {
+          "arg": "id",
+          "type": "object",
+          "root": true,
+          "description": "An authorization token used for performing authenticated requests."
+        }
+      ],
+      "description": "Logins in a user that logged in using the Facebook SDK.",
+      "http": [
+        {
+          "path": "/login-facebook",
+          "verb": "post"
+        }
+      ]
+    },
+    "signupWithFacebook": {
+      "accepts": [
+        {
+          "arg": "facebookAccessToken",
+          "type": "string",
+          "required": true,
+          "description": "An access token given from the Facebook SDK for interacting with Facebook's Graph API."
+        },
+        {
+          "arg": "firstName",
+          "type": "string",
+          "required": true,
+          "description": "The first name of the user."
+        },
+        {
+          "arg": "lastName",
+          "type": "string",
+          "required": true,
+          "description": "The last name of the user."
+        },
+        {
+          "arg": "email",
+          "type": "string",
+          "required": true,
+          "description": "The email of the user used for Facebook."
+        },
+        {
+          "arg": "avatarUrl",
+          "type": "string",
+          "required": false,
+          "description": "The url to the user's avatar used in Facebook."
+        }
+      ],
+      "returns": [
+        {
+          "arg": "id",
+          "type": "object",
+          "root": true,
+          "description": "An authorization token used for performing authenticated requests."
+        }
+      ],
+      "description": "Signs up a user with a Facebook account.",
+      "http": [
+        {
+          "path": "/signup-facebook",
+          "verb": "post"
+        }
+      ]
+    },
+    "currentUser": {
+      "accepts": [
+        {
+          "arg": "req",
+          "type": "object",
+          "required": true,
+          "http": {
+            "source": "req"
+          }
+        }
+      ],
+      "returns": [
+        {
+          "arg": "picksuser",
+          "type": "object",
+          "root": true,
+          "description": "A PicksUser object representing the current user."
+        }
+      ],
+      "description": "Gets the current user with an authorization token.",
+      "http": [
+        {
+          "path": "/me",
+          "verb": "get"
+        }
+      ]
+    }
+  }
+}

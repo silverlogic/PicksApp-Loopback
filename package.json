@@ -26,11 +26,7 @@
     "eslint-config-loopback": "^8.0.0",
     "nsp": "^2.1.0"
   },
-  "repository": {
-    "type": "",
-    "url": ""
-  },
+  "repository": "https://github.com/silverlogic/PicksApp-Loopback",
   "license": "UNLICENSED",
-  "description": "picks-loopback",
-  "repository" : "https://github.com/silverlogic/PicksApp-Loopback"
+  "description": "picks-loopback"
 }
