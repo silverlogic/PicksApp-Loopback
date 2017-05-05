@@ -196,19 +196,17 @@ module.exports = function(PicksUser) {
     */
    PicksUser.currentUser = function(req, callback) {
      // Get from query parameter when testing with explorer
-     var accessToken = req.query.access_token;
-     if (accessToken === null) {
-       accessToken = req.accessToken.id;
-     }
+     var accessToken = req.accessToken.id;
+     console.log(accessToken);
      // Get the access token instance from the database to get the userId
-     PicksUser.app.models.AccessToken.find({where: {id: accessToken}},
-                                          function(error, accessTokens) {
+     PicksUser.app.models.AccessToken.findById(accessToken,
+                                          function(error, retrivedAccessToken) {
        if (error) {
          console.log('Error checking access token in database');
          logLocationOfError('currentUser');
          callback(error, null);
        } else {
-         var retrivedAccessToken = accessTokens[0];
+         // var retrivedAccessToken = accessTokens[0];
          // Use the userId to get the current userId
          PicksUser.findById(retrivedAccessToken.userId,
                             function(error, picksUser) {
