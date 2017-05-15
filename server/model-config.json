@@ -73,5 +73,9 @@
   "PicksUser": {
     "dataSource": "ComposePostgreSQL",
     "public": true
+  },
+  "Group": {
+    "dataSource": "ComposePostgreSQL",
+    "public": true
   }
 }
