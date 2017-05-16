@@ -1,0 +1,88 @@
+{
+  "name": "Schedule",
+  "base": "Model",
+  "idInjection": true,
+  "options": {
+    "validateUpsert": true
+  },
+  "properties": {},
+  "validations": [],
+  "relations": {},
+  "acls": [],
+  "methods": {
+    "schedule": {
+      "accepts": [
+        {
+          "arg": "season",
+          "type": "number",
+          "required": true,
+          "description": "The season in the league represented by a year.",
+          "http": {
+            "source": "query"
+          }
+        },
+        {
+          "arg": "week",
+          "type": "number",
+          "required": true,
+          "description": "The week in the given season.",
+          "http": {
+            "source": "query"
+          }
+        }
+      ],
+      "returns": [
+        {
+          "arg": "games",
+          "type": "array",
+          "root": true,
+          "description": "An array of games for the requested schedule."
+        }
+      ],
+      "description": "Finds historical score data based on a given season and week.",
+      "http": [
+        {
+          "path": "/schedule",
+          "verb": "get"
+        }
+      ]
+    },
+    "liveSchedule": {
+      "accepts": [
+        {
+          "arg": "season",
+          "type": "number",
+          "required": true,
+          "description": "The season in the league represented by a year.",
+          "http": {
+            "source": "query"
+          }
+        },
+        {
+          "arg": "week",
+          "type": "number",
+          "required": true,
+          "description": "The week in the given season.",
+          "http": {
+            "source": "query"
+          }
+        }
+      ],
+      "returns": [
+        {
+          "arg": "games",
+          "type": "array",
+          "root": true,
+          "description": "An array of games for the requested schedule."
+        }
+      ],
+      "description": "Finds live, granular score data on a given season and week.",
+      "http": [
+        {
+          "path": "/live-schedule",
+          "verb": "get"
+        }
+      ]
+    }
+  }
+}

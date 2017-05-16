@@ -12,5 +12,43 @@
     "name": "ComposePostgreSQL",
     "user": "",
     "connector": "postgresql"
+  },
+  "ScheduleScrapper": {
+    "name": "ScheduleScrapper",
+    "baseURL": "",
+    "crud": false,
+    "connector": "rest",
+    "operations": [
+      {
+        "template": {
+          "method": "GET",
+          "url": "https://nfl-score-scraper.mybluemix.net/schedule/{season}/{week}",
+          "headers": {
+            "accept": "application/json"
+          }
+        },
+        "functions": {
+          "schedule": [
+            "season",
+            "week"
+          ]
+        }
+      },
+      {
+        "template": {
+          "method": "GET",
+          "url": "https://nfl-score-scraper.mybluemix.net/live/{season}/{week}",
+          "headers": {
+            "accept": "application/json"
+          }
+        },
+        "functions": {
+          "live": [
+            "season",
+            "week"
+          ]
+        }
+      }
+    ]
   }
 }
