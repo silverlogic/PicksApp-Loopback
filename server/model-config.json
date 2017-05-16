@@ -77,5 +77,9 @@
   "Group": {
     "dataSource": "ComposePostgreSQL",
     "public": true
+  },
+  "Schedule": {
+    "dataSource": "db",
+    "public": true
   }
 }
