@@ -100,7 +100,11 @@ module.exports = function(Group) {
       } else {
         if (participantId) {
           results = results.filter(function(group) {
-            return group.participants.includes(participantId);
+            if (group.participants) {
+              return group.participants.includes(participantId);
+            } else {
+              return false;
+            }
           });
           callback(null, results);
         } else {
