@@ -81,5 +81,25 @@
   "Schedule": {
     "dataSource": "db",
     "public": true
+  },
+  "Season": {
+    "dataSource": "ComposePostgreSQL",
+    "public": true
+  },
+  "Score": {
+    "dataSource": "ComposePostgreSQL",
+    "public": true
+  },
+  "Week": {
+    "dataSource": "ComposePostgreSQL",
+    "public": true
+  },
+  "Pick": {
+    "dataSource": "ComposePostgreSQL",
+    "public": true
+  },
+  "Nfl": {
+    "dataSource": "ComposePostgreSQL",
+    "public": false
   }
 }
