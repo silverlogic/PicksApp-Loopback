@@ -22,13 +22,14 @@
       {
         "template": {
           "method": "GET",
-          "url": "https://nfl-score-scraper.mybluemix.net/schedule/{season}/{week}",
+          "url": "https://picksapp-sportsscrapper.mybluemix.net/historical-schedule/{leagueType}/{season}/{week}",
           "headers": {
             "accept": "application/json"
           }
         },
         "functions": {
-          "schedule": [
+          "historical": [
+            "leagueType",
             "season",
             "week"
           ]
@@ -37,13 +38,14 @@
       {
         "template": {
           "method": "GET",
-          "url": "https://nfl-score-scraper.mybluemix.net/live/{season}/{week}",
+          "url": "https://picksapp-sportsscrapper.mybluemix.net/live-schedule/{leagueType}/{season}/{week}",
           "headers": {
             "accept": "application/json"
           }
         },
         "functions": {
           "live": [
+            "leagueType",
             "season",
             "week"
           ]
