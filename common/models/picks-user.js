@@ -45,7 +45,6 @@ module.exports = function(PicksUser) {
   PicksUser.disableRemoteMethod('replaceById', true);
   PicksUser.disableRemoteMethod('createChangeStream', true);
   PicksUser.disableRemoteMethod('find', true);
-  PicksUser.disableRemoteMethod('findById', true);
   PicksUser.disableRemoteMethod('findOne', true);
   PicksUser.disableRemoteMethod('deleteById', true);
   PicksUser.disableRemoteMethod('confirm', true);
