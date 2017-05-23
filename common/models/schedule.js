@@ -1,6 +1,8 @@
 'use strict';
 
 module.exports = function(Schedule) {
+  // Remote Methods
+
   /**
   * Finds historical score data based on a given season and week.
   * @param {number} leagueType The sports league to get a schedule from. For
