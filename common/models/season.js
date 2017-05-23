@@ -1,6 +1,7 @@
 'use strict';
 
 module.exports = function(Season) {
+  // Disable endpoints not needed
   Season.disableRemoteMethod('create', true);
   Season.disableRemoteMethod('upsert', true);
   Season.disableRemoteMethod('upsertWithWhere', true);

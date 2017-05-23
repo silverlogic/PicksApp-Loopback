@@ -61,6 +61,8 @@ module.exports = function(PicksUser) {
   PicksUser.disableRemoteMethod('__get__accessTokens', false);
   PicksUser.disableRemoteMethod('__updateById__accessTokens', false);
 
+  // Remote Methods
+
   /**
    * Logins in a user that logged in using the Facebook SDK.
    * @param {string} facebook_access_token An access token given from the

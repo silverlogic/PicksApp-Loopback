@@ -1,4 +1,5 @@
 'use strict';
+var async = require('async');
 
 module.exports = function(Group) {
   // Disable endpoints not needed
@@ -18,6 +19,44 @@ module.exports = function(Group) {
   Group.disableRemoteMethod('confirm', true);
   Group.disableRemoteMethod('count', true);
   Group.disableRemoteMethod('exists', true);
+
+  // Remote Methods
+
+  /**
+  * Gets a list of users that are part of the group.
+  * @param {Function(Error, array)} callback
+  */
+  Group.prototype.participantsInGroup = function(req, callback) {
+    var groupId = req.params['id'];
+    Group.findById(groupId, function(error, group) {
+      if (error) {
+        callback(error, null);
+      } else {
+        if (group.participants) {
+          var PicksUser = Group.app.models.PicksUser;
+          var participants = [];
+          async.eachLimit(group.participants, 1, function(id, cb) {
+            PicksUser.findById(id, function(error, user) {
+              if (error) {
+                cb(error);
+              } else {
+                participants.push(user);
+                cb();
+              }
+            });
+          }, function(error) {
+            if (error) {
+              callback(error, null);
+            } else {
+              callback(null, participants);
+            }
+          });
+        } else {
+          callback(null, []);
+        }
+      }
+    });
+  };
 
   /**
   * Allows an user to join a public group.
