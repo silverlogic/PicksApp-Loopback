@@ -1,0 +1,31 @@
+{
+  "name": "Nfl",
+  "base": "PersistedModel",
+  "idInjection": true,
+  "options": {
+    "validateUpsert": true,
+    "postgresql": {
+      "scheme": "picksapp",
+      "table": "Nfl"
+    }
+  },
+  "properties": {
+    "currentSeason": {
+      "type": "number"
+    },
+    "currentWeek": {
+      "type": "number"
+    }
+  },
+  "validations": [],
+  "relations": {},
+  "acls": [
+    {
+      "accessType": "*",
+      "principalType": "ROLE",
+      "principalId": "$everyone",
+      "permission": "DENY"
+    }
+  ],
+  "methods": {}
+}

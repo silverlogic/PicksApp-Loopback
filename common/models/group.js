@@ -140,4 +140,18 @@ module.exports = function(Group) {
       }
     });
   };
+
+  // Remote hooks
+
+  /**
+  * Creates a season for the newly created group. The season will default to
+  * the current one.
+  * @param {string} methodName Name of the method to fire the hook after
+                               completion.
+  * @param {Function(object, object, Function())} callback
+  */
+  Group.afterRemote('create', function(ctx, modelInstance, next) {
+    console.log(modelInstance);
+    next();
+  });
 };
