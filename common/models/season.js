@@ -18,4 +18,23 @@ module.exports = function(Season) {
   Season.disableRemoteMethod('confirm', true);
   Season.disableRemoteMethod('count', true);
   Season.disableRemoteMethod('exists', true);
+
+  // Remote Methods
+
+  /**
+  * Gets a list of scores for the season.
+  * @param {Function(Error, array)} callback
+  */
+  Season.prototype.scoresForSeason = function(req, callback) {
+    var seasonId = req.params['id'];
+    var Score = Season.app.models.Score;
+    Score.find({where: {season: seasonId}}, function(error, scores) {
+      if (error) {
+        console.log(error);
+        callback(error, null);
+      } else {
+        callback(null, scores);
+      }
+    });
+  };
 };

@@ -50,6 +50,20 @@
             "week"
           ]
         }
+      },
+      {
+        "template": {
+          "method": "GET",
+          "url": "https://picksapp-sportsscrapper.mybluemix.net/current/{leagueType}",
+          "headers": {
+            "accept": "application/json"
+          }
+        },
+        "functions": {
+          "current": [
+            "leagueType"
+          ]
+        }
       }
     ]
   }
