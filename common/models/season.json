@@ -20,8 +20,7 @@
       ]
     },
     "week": {
-      "type": "number",
-      "required": true
+      "type": "number"
     },
     "group": {
       "type": "number"
@@ -43,5 +42,33 @@
       "permission": "ALLOW"
     }
   ],
-  "methods": {}
+  "methods": {
+    "prototype.scoresForSeason": {
+      "accepts": [
+        {
+          "arg": "req",
+          "type": "object",
+          "required": true,
+          "http": {
+            "source": "req"
+          }
+        }
+      ],
+      "returns": [
+        {
+          "arg": "results",
+          "type": "array",
+          "root": true,
+          "description": "An array of score objects."
+        }
+      ],
+      "description": "Gets a list of scores for the season.",
+      "http": [
+        {
+          "path": "/scores",
+          "verb": "get"
+        }
+      ]
+    }
+  }
 }
