@@ -42,14 +42,16 @@ module.exports = function(app) {
           }
         });
         // Get all seasons currently being used
+        console.log('Retrieving current seasons');
         return Season.find({where: {season: nfl.currentSeason}});
       } else {
         // Not all games have finished
         var currentDate = new Date();
-        console.log('Not all games are complete at ' + currentDate);
+        return Promise.reject('Not all games are complete at ' + currentDate);
       }
     })
     .then(function(seasons) {
+      console.log('Going through current seasons');
       loadedSeasons = seasons;
       // Go through each season
       async.eachLimit(loadedSeasons, 1, function(season, cb) {
@@ -60,6 +62,7 @@ module.exports = function(app) {
           return Pick.find({where: {week: week.id}});
         })
         .then(function(picks) {
+          console.log('Updating scores for season ' + season.id);
           // Go through each pick and determine if participant picked correctly
           // or not
           async2.eachLimit(picks, 1, function(pick, cb2) {
@@ -98,6 +101,7 @@ module.exports = function(app) {
         if (error) {
           return Promise.reject(error);
         } else {
+          console.log('Updating NFL model after score completion');
           // Update NFL model with new week and new season if at the end
           if (nfl.currentWeek == 16) {
             // Update season and week
@@ -115,6 +119,7 @@ module.exports = function(app) {
       nfl = updatedNfl;
       // Check if new seasons need to be created or not
       if (currentSeason == nfl.currentSeason) {
+        console.log('Updating seasons with new week');
         // Only need to update current week for each season
         async.eachLimit(loadedSeasons, 1, function(season, cb) {
           Week.create({season: season.id, week: nfl.currentWeek})
@@ -128,11 +133,12 @@ module.exports = function(app) {
           if (error) {
             return Promise.reject(error);
           } else {
-            console.log('All current seasons have been updated with new week');
+            return Promise.reject('All current seasons have been updated');
           }
         });
       } else {
         // Need to update groups with new season, week and scores
+        console.log('Updating all groups');
         return Group.find();
       }
     })
