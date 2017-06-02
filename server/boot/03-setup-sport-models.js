@@ -1,51 +1,34 @@
 'use strict';
-var async = require('async');
+var Promise = require('bluebird');
 
 module.exports = function(app) {
   var ScheduleScrapper = app.dataSources.ScheduleScrapper;
-  ScheduleScrapper.current(0, function(error, result) {
-    if (error) {
-      console.log(error);
+  var Nfl = app.models.Nfl;
+  let scheduleResults;
+  ScheduleScrapper.current(0)
+  .then(function(result) {
+    scheduleResults = result;
+    return Nfl.find();
+  })
+  .then(function(nflResults) {
+    if (nflResults.length == 0) {
+      // Create new model
+      console.log('NFL model will be created');
+      return Nfl.create({currentSeason: scheduleResults['season'],
+                         currentWeek: scheduleResults['week']});
     } else {
-      var Nfl = app.models.Nfl;
-      async.series([
-        function(callback) {
-          Nfl.find(function(error, results) {
-            if (error) {
-              callback(null, error.message);
-            } else {
-              if (results.length == 0) {
-                // Create new model
-                Nfl.create({currentSeason: result['season'],
-                            currentWeek: result['week']},
-                           function(error, createdNfl) {
-                  if (error) {
-                    callback(error, null);
-                  } else {
-                    callback(null, 'NFL model created');
-                  }
-                });
-              } else {
-                // Update current model
-                var nfl = results[0];
-                nfl.currentSeason = result['season'];
-                nfl.currentWeek = result['week'];
-                nfl.save(function(error, updatedNfl) {
-                  if (error) {
-                    callback(error, null);
-                  } else {
-                    callback(error, 'NFL model updated');
-                  }
-                });
-              }
-            }
-          });
-        },
-      ], function(error, results) {
-        for (var i = 0; i < results.length; i++) {
-          console.log(results[i]);
-        }
-      });
+      // Update current model
+      var nfl = nflResults[0];
+      console.log(nfl);
+      console.log('NFL model will be updated');
+      return Nfl.upsert({id: nfl.id, currentSeason: scheduleResults['season'],
+                         currentWeek: scheduleResults['week']});
     }
+  })
+  .then(function(updatedNfl) {
+    console.log('NFL model updated');
+  })
+  .catch(function(error) {
+    console.log(error);
   });
 };

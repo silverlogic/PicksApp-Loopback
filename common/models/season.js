@@ -1,4 +1,5 @@
 'use strict';
+var Promise = require('bluebird');
 
 module.exports = function(Season) {
   // Disable endpoints not needed
@@ -28,13 +29,13 @@ module.exports = function(Season) {
   Season.prototype.scoresForSeason = function(req, callback) {
     var seasonId = req.params['id'];
     var Score = Season.app.models.Score;
-    Score.find({where: {season: seasonId}}, function(error, scores) {
-      if (error) {
-        console.log(error);
-        callback(error, null);
-      } else {
-        callback(null, scores);
-      }
+    Score.find({where: {season: seasonId}})
+    .then(function(scores) {
+      callback(null, scores);
+    })
+    .catch(function(error) {
+      console.log(error);
+      callback(error, null);
     });
   };
 };

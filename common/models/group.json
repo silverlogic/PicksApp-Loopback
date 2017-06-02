@@ -31,11 +31,6 @@
         "number"
       ]
     },
-    "pastSeasons": {
-      "type": [
-        "number"
-      ]
-    },
     "currentSeason": {
       "type": "number"
     }

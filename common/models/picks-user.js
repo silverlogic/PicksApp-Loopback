@@ -1,14 +1,7 @@
 'use strict';
+var Promise = require('bluebird');
 
 // Helper Methods
-
-/**
- * Logs location where error was thrown.
- * @param {string} methodName The name of the method where the error was thrown
- */
-function logLocationOfError(methodName) {
-  console.log('Error thrown in ', methodName);
-}
 
  /**
  * Generates an authorization token for the given user.
@@ -16,18 +9,13 @@ function logLocationOfError(methodName) {
  * @param {Function(Error, object)} callback
  */
 function generateAuthorizationToken(picksUser, callback) {
-  console.log(picksUser);
-  picksUser.createAccessToken({ttl: -1, userId: picksUser.id},
-                              function(error, accessToken) {
-    if (error) {
-      console.log('Error creating AccessToken object');
-      logLocationOfError('generateAuthorizationToken');
-      callback(error, null);
-    } else {
-      console.log('AccessToken object created');
-      console.log(accessToken);
-      callback(null, accessToken);
-    }
+  picksUser.createAccessToken({ttl: -1, userId: picksUser.id})
+  .then(function(accessToken) {
+    callback(null, accessToken);
+  })
+  .catch(function(error) {
+    console.log(error);
+    callback(error, null);
   });
 }
 
@@ -72,36 +60,28 @@ module.exports = function(PicksUser) {
    */
   PicksUser.loginWithFacebook = function(facebookAccessToken, callback) {
     // Locate the user in the database based on their Facebook access token
-    PicksUser.find({where: {facebookAccessToken: facebookAccessToken}},
-                   function(error, picksUsers) {
-      if (error) {
-        console.log('Error locating user in database.');
-        logLocationOfError('loginWithFacebook');
-        callback(error, null);
-      } else {
-        if (picksUsers.length == 0 || picksUsers.length > 1) {
-          var userAlreadyExistsError = new Error();
-          userAlreadyExistsError.status = 404;
-          userAlreadyExistsError.message = 'Facebook user does not exist';
-          userAlreadyExistsError.code = 'NOT_FOUND';
-          callback(userAlreadyExistsError, null);
-          return;
-        }
-        var picksUser = picksUsers[0];
-        console.log('User found');
-        console.log(picksUser);
-        // Reset and generate access token for user
-        generateAuthorizationToken(picksUser, function(error, accessToken) {
-          if (error) {
-            console.log('Error getting access tokens for user');
-            logLocationOfError('loginWithFacebook');
-            callback(error, null);
-          } else {
-            var json = {'id': accessToken.id};
-            callback(null, json);
-          }
-        });
+    PicksUser.find({where: {facebookAccessToken: facebookAccessToken}})
+    .then(function(picksUsers) {
+      if (picksUsers.length == 0 || picksUsers.length > 1) {
+        var userAlreadyExistsError = new Error();
+        userAlreadyExistsError.status = 404;
+        userAlreadyExistsError.message = 'Facebook user does not exist';
+        userAlreadyExistsError.code = 'NOT_FOUND';
+        return Promise.reject(userAlreadyExistsError);
       }
+      var picksUser = picksUsers[0];
+      // Reset and generate access token for user
+      generateAuthorizationToken(picksUser, function(error, accessToken) {
+        if (error) {
+          return Promise.reject(error);
+        } else {
+          var json = {'id': accessToken.id};
+          callback(null, json);
+        }
+      });
+    })
+    .catch(function(error) {
+      callback(error, null);
     });
   };
 
@@ -120,74 +100,45 @@ module.exports = function(PicksUser) {
                                            lastName, email, avatarUrl,
                                            callback) {
      // First check if the database already has a user with the given email
-     PicksUser.find({where: {email: email}}, function(error, picksUsers) {
-       if (error) {
-         console.log('Error checking database');
-         logLocationOfError('signupWithFacebook');
-         callback(error, null);
-       } else if (picksUsers.length == 1) {
+     PicksUser.find({where: {email: email}})
+     .then(function(picksUsers) {
+       if (picksUsers.length == 1) {
          // Check if email has already a Facebook access token.
          // This could mean the access token of that user expired.
          var picksUser = picksUsers[0];
          if (picksUser.facebookAccessToken === null) {
-           // Client needs to provide a different email
            var emailError = new Error();
            emailError.status = 400;
            emailError.message = 'email_already_in_use';
            emailError.code = 'BAD_REQUEST';
-           callback(emailError, null);
+           return Promise.reject(emailError);
          } else {
            // Only need to update the Facebook access token with the new one.
-           console.log(facebookAccessToken);
            picksUser.facebookAccessToken = facebookAccessToken;
            // Update the user
-           picksUser.save(function(error, updatedPicksUser) {
-             if (error) {
-               console.log('Error updating user');
-               logLocationOfError('signupWithFacebook');
-               callback(error, null);
-             } else {
-               // Generate new access token
-               generateAuthorizationToken(picksUser,
-                                          function(error, accessToken) {
-                 if (error) {
-                   console.log('Error getting access tokens for user');
-                   logLocationOfError('signupWithFacebook');
-                   callback(error, null);
-                 } else {
-                   var json = {'id': accessToken.id};
-                   callback(null, json);
-                 }
-               });
-             }
-           });
+           return picksUser.save();
          }
        } else {
          // Create new Facebook user
-         PicksUser.create({facebookAccessToken: facebookAccessToken,
-                           firstName: firstName, lastName: lastName,
-                           email: email, avatarUrl: avatarUrl},
-                           function(error, newPicksUser) {
-           if (error) {
-             console.log('Error creating new user');
-             logLocationOfError('signupWithFacebook');
-             callback(error, null);
-           } else {
-             // Generate new access token
-             generateAuthorizationToken(
-               newPicksUser, function(error, accessToken) {
-               if (error) {
-                 console.log('Error getting access tokens for user');
-                 logLocationOfError('signupWithFacebook');
-                 callback(error, null);
-               } else {
-                 var json = {'id': accessToken.id};
-                 callback(null, json);
-               }
-             });
-           }
-         });
+         return PicksUser.create({facebookAccessToken: facebookAccessToken,
+                                  firstName: firstName, lastName: lastName,
+                                  email: email, avatarUrl: avatarUrl});
        }
+     })
+     .then(function(user) {
+       // Generate new access token
+       generateAuthorizationToken(user, function(error, accessToken) {
+         if (error) {
+           return Promise.reject(error);
+         } else {
+           var json = {'id': accessToken.id};
+           callback(null, json);
+         }
+       });
+     })
+     .catch(function(error) {
+       console.log(error);
+       callback(error, null);
      });
    };
 
@@ -198,28 +149,19 @@ module.exports = function(PicksUser) {
    PicksUser.currentUser = function(req, callback) {
      // Get from query parameter when testing with explorer
      var accessToken = req.accessToken.id;
-     console.log(accessToken);
+     var AccessToken = PicksUser.app.models.AccessToken;
      // Get the access token instance from the database to get the userId
-     PicksUser.app.models.AccessToken.findById(accessToken,
-                                          function(error, retrivedAccessToken) {
-       if (error) {
-         console.log('Error checking access token in database');
-         logLocationOfError('currentUser');
-         callback(error, null);
-       } else {
-         // var retrivedAccessToken = accessTokens[0];
-         // Use the userId to get the current userId
-         PicksUser.findById(retrivedAccessToken.userId,
-                            function(error, picksUser) {
-           if (error) {
-             console.log('Error retriving user');
-             logLocationOfError('currentUser');
-             callback(error, null);
-           } else {
-             callback(null, picksUser);
-           }
-         });
-       }
+     AccessToken.findById(accessToken)
+     .then(function(retrivedAccessToken) {
+       // Use the userId to get the current userId
+       return PicksUser.findById(retrivedAccessToken.userId);
+     })
+     .then(function(picksUser) {
+       callback(null, picksUser);
+     })
+     .catch(function(error) {
+       console.log(error);
+       callback(error, null);
      });
    };
 };
