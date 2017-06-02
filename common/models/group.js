@@ -2,37 +2,6 @@
 var async = require('async');
 var Promise = require('bluebird');
 
-/**
-* Adds a participant to a group.
-* @param {Model} Group Model used for staic operations.
-* @param {object} group Model instance representing the group.
-* @param {number} userId Model id of the user to join.
-* @param {Function(Error)} callback
-*/
-function addParticipant(Group, group, userId, callback) {
-  var Score = Group.app.models.Score;
-  var Season = Group.app.models.Season;
-  let newScore;
-  // Create score for user
-  Score.create({participant: userId, season: group.currentSeason})
-  .then(function(createdScore) {
-    newScore = createdScore;
-    // Update current season
-    return Season.findById(group.currentSeason);
-  })
-  .then(function(season) {
-    season.scores.push(newScore.id);
-    return season.save();
-  })
-  .then(function(updatedSeason) {
-    callback(null);
-  })
-  .catch(function(error) {
-    console.log('Error adding participant');
-    callback(error);
-  });
-}
-
 module.exports = function(Group) {
   // Disable endpoints not needed
   Group.disableRemoteMethod('upsert', true);
@@ -107,19 +76,13 @@ module.exports = function(Group) {
         creatorInGroupError.status = 400;
         creatorInGroupError.message = 'Creator is already in group.';
         creatorInGroupError.code = 'BAD_REQUEST';
-        callback(creatorInGroupError);
+        return Promise.reject(creatorInGroupError);
       } else if (group.participants === null) {
         // Create the first participant
         console.log('Adding first user');
         var participants = [];
         group.participants = participants;
-        addParticipant(Group, group, userId, function(error) {
-          if (error) {
-            callback(error);
-          } else {
-            callback(null);
-          }
-        });
+        return Group.addParticipant(group, userId);
       } else if (group.participants.includes(userId)) {
         // User is already in group
         console.log('User is alrady in group');
@@ -127,18 +90,15 @@ module.exports = function(Group) {
         userInGroupError.status = 400;
         userInGroupError.message = 'User is already in group.';
         userInGroupError.code = 'BAD_REQUEST';
-        callback(userInGroupError);
+        return Promise.reject(userInGroupError);
       } else {
         // Add a new participant
         console.log('Add additional user');
-        addParticipant(Group, group, userId, function(error) {
-          if (error) {
-            callback(error);
-          } else {
-            callback(null);
-          }
-        });
+        return Group.addParticipant(group, userId);
       }
+    })
+    .then(function() {
+      callback();
     })
     .catch(function(error) {
       callback(error);
@@ -209,49 +169,14 @@ module.exports = function(Group) {
   // Remote hooks
 
   /**
-  * Creates a season for the newly created group. The season will default to
-  * the current one.
+  * Remote hook for handling when a group is created through the web
+  * context.
   * @param {string} methodName Name of the method to fire the hook after
                                completion.
   * @param {Function(object, object, Function())} callback
   */
   Group.afterRemote('create', function(ctx, modelInstance, next) {
-    // Get the current season and week of the NFL
-    var Nfl = Group.app.models.Nfl;
-    var Season = Group.app.models.Season;
-    var Week = Group.app.models.Week;
-    var Score = Group.app.models.Score;
-    let nfl, newSeason, newWeek;
-    Nfl.find()
-    .then(function(results) {
-      nfl = results[0];
-      // Create season for group
-      return Season.create({season: nfl.currentSeason,
-                            group: modelInstance.id});
-    })
-    .then(function(season) {
-      newSeason = season;
-      // Create week for season
-      return Week.create({season: newSeason.id, week: nfl.currentWeek});
-    })
-    .then(function(week) {
-      newWeek = week;
-      // Create score for created season of the group creator
-      return Score.create({participant: modelInstance.creator,
-                           season: newSeason.id});
-    })
-    .then(function(score) {
-      // Update created season
-      newSeason.scores = [score.id];
-      newSeason.week = newWeek.id;
-      return newSeason.save();
-    })
-    .then(function(updatedSeason) {
-      newSeason = updatedSeason;
-      // Update created group
-      modelInstance.currentSeason = newSeason.id;
-      return modelInstance.save();
-    })
+    Group.setupCurrentSeason(modelInstance)
     .then(function(updatedGroup) {
       next();
     })
@@ -260,4 +185,91 @@ module.exports = function(Group) {
       next();
     });
   });
+
+  // Static Methods
+
+  /**
+  * Creates a season for the newly created group. The season will default to
+  * the current one.
+  * @param {object} group The group that was just created.
+  * @return {Promise}
+  */
+  Group.setupCurrentSeason = function(group) {
+    return new Promise(function(resolve, reject) {
+      // Get the current season and week of the NFL
+      var Nfl = Group.app.models.Nfl;
+      var Season = Group.app.models.Season;
+      var Week = Group.app.models.Week;
+      var Score = Group.app.models.Score;
+      let nfl, newSeason, newWeek;
+      Nfl.find()
+      .then(function(results) {
+        nfl = results[0];
+        // Create season for group
+        return Season.create({season: nfl.currentSeason,
+                              group: group.id});
+      })
+      .then(function(season) {
+        newSeason = season;
+        // Create week for season
+        return Week.create({season: newSeason.id, week: nfl.currentWeek});
+      })
+      .then(function(week) {
+        newWeek = week;
+        // Create score for created season of the group creator
+        return Score.create({participant: group.creator,
+                            season: newSeason.id});
+      })
+      .then(function(score) {
+        // Update created season
+        newSeason.scores = [score.id];
+        newSeason.week = newWeek.id;
+        return newSeason.save();
+      })
+      .then(function(updatedSeason) {
+        newSeason = updatedSeason;
+        // Update created group
+        group.currentSeason = newSeason.id;
+        return group.save();
+      })
+      .then(function(updatedGroup) {
+        resolve(updatedGroup);
+      })
+      .catch(function(error) {
+        reject(error);
+      });
+    });
+  };
+
+  /**
+  * Adds a participant to a group.
+  * @param {object} group Model instance representing the group.
+  * @param {number} userId Model id of the user to join.
+  * @return {Promise}
+  */
+  Group.addParticipant = function(group, userId) {
+    return new Promise(function(resolve, reject) {
+      var Score = Group.app.models.Score;
+      var Season = Group.app.models.Season;
+      let newScore;
+      // Create score for user
+      Score.create({participant: userId, season: group.currentSeason})
+      .then(function(createdScore) {
+        newScore = createdScore;
+        // Update current season
+        return Season.findById(group.currentSeason);
+      })
+      .then(function(season) {
+        season.scores.push(newScore.id);
+        return season.save();
+      })
+      .then(function(updatedSeason) {
+        resolve();
+      })
+      .catch(function(error) {
+        console.log('Error adding participant');
+        reject(error);
+      });
+    });
+  };
 };

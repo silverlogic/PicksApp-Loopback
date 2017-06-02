@@ -7,15 +7,18 @@ var Promise = require('bluebird');
  * Generates an authorization token for the given user.
  * @param {object} picksUser The user to create an authorization token for.
  * @param {Function(Error, object)} callback
+ * @return {Promise}
  */
-function generateAuthorizationToken(picksUser, callback) {
-  picksUser.createAccessToken({ttl: -1, userId: picksUser.id})
-  .then(function(accessToken) {
-    callback(null, accessToken);
-  })
-  .catch(function(error) {
-    console.log(error);
-    callback(error, null);
+function generateAuthorizationToken(picksUser) {
+  return new Promise(function(resolve, reject) {
+    picksUser.createAccessToken({ttl: -1, userId: picksUser.id})
+    .then(function(accessToken) {
+      resolve(accessToken);
+    })
+    .catch(function(error) {
+      console.log(error);
+      reject(error);
+    });
   });
 }
 
@@ -99,6 +102,12 @@ module.exports = function(PicksUser) {
    PicksUser.signupWithFacebook = function(facebookAccessToken, firstName,
                                            lastName, email, avatarUrl,
                                            callback) {
+     var Group = PicksUser.app.models.Group;
+     var Score = PicksUser.app.models.Score;
+     var Season = PicksUser.app.models.Season;
+     var isNewUser = false;
+     var globalGroup;
+     let accessTokenId, newUser, newScore;
      // First check if the database already has a user with the given email
      PicksUser.find({where: {email: email}})
      .then(function(picksUsers) {
@@ -120,25 +129,58 @@ module.exports = function(PicksUser) {
          }
        } else {
          // Create new Facebook user
+         isNewUser = true;
          return PicksUser.create({facebookAccessToken: facebookAccessToken,
                                   firstName: firstName, lastName: lastName,
                                   email: email, avatarUrl: avatarUrl});
        }
      })
      .then(function(user) {
+       newUser = user;
        // Generate new access token
-       generateAuthorizationToken(user, function(error, accessToken) {
-         if (error) {
-           return Promise.reject(error);
-         } else {
-           var json = {'id': accessToken.id};
-           callback(null, json);
-         }
-       });
+       return generateAuthorizationToken(user);
+     })
+     .then(function(accessToken) {
+        accessTokenId = accessToken.id;
+        if (isNewUser) {
+          // Add user to global group
+          return Group.find({where: {name: 'Global'}});
+        } else {
+          callback(null, {'id': accessTokenId});
+          return Promise.reject(null);
+        }
+     })
+     .then(function(groups) {
+       globalGroup = groups[0];
+       if (globalGroup.participants) {
+         globalGroup.participants.push(newUser.id);
+       } else {
+         globalGroup.participants = [newUser.id];
+       }
+       return globalGroup.save();
+     })
+     .then(function(updatedGroup) {
+       globalGroup = updatedGroup;
+       // Create score for new participant
+       return Score.create({participant: newUser.id,
+                            season: updatedGroup.currentSeason});
+     })
+     .then(function(score) {
+        newScore = score;
+        return Season.findById(globalGroup.currentSeason);
+     })
+     .then(function(season) {
+       season.scores.push(newScore.id);
+       return season.save();
+     })
+     .then(function(updatedSeason) {
+       callback(null, {'id': accessTokenId});
      })
      .catch(function(error) {
-       console.log(error);
-       callback(error, null);
+       if (error) {
+         console.log(error);
+         callback(error, null);
+       }
      });
    };
 
