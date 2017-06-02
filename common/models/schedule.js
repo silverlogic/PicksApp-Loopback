@@ -1,4 +1,5 @@
 'use strict';
+var Promise = require('bluebird');
 
 module.exports = function(Schedule) {
   // Remote Methods
@@ -13,14 +14,13 @@ module.exports = function(Schedule) {
   */
   Schedule.historical = function(leagueType, season, week, callback) {
     var ScheduleScrapper = Schedule.app.dataSources.ScheduleScrapper;
-    ScheduleScrapper.historical(leagueType, season, week,
-                                function(error, result) {
-      if (error) {
-        console.log('Error retrieving schedule');
-        callback(error, null);
-      } else {
-        callback(null, result);
-      }
+    ScheduleScrapper.historical(leagueType, season, week)
+    .then(function(result) {
+      callback(null, result);
+    })
+    .catch(function(error) {
+      console.log('Error retrieving schedule');
+      callback(error, null);
     });
   };
 
@@ -34,13 +34,13 @@ module.exports = function(Schedule) {
   */
   Schedule.live = function(leagueType, season, week, callback) {
     var ScheduleScrapper = Schedule.app.dataSources.ScheduleScrapper;
-    ScheduleScrapper.live(leagueType, season, week, function(error, result) {
-      if (error) {
-        console.log('Error getting live schedule');
-        callback(error, null);
-      } else {
-        callback(null, result);
-      }
+    ScheduleScrapper.live(leagueType, season, week)
+    .then(function(result) {
+      callback(null, result);
+    })
+    .catch(function(error) {
+      console.log('Error getting live schedule');
+      callback(error, null);
     });
   };
 };

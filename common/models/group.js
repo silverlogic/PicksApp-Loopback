@@ -1,5 +1,6 @@
 'use strict';
 var async = require('async');
+var Promise = require('bluebird');
 
 /**
 * Adds a participant to a group.
@@ -10,32 +11,25 @@ var async = require('async');
 */
 function addParticipant(Group, group, userId, callback) {
   var Score = Group.app.models.Score;
+  var Season = Group.app.models.Season;
+  let newScore;
   // Create score for user
-  Score.create({participant: userId,
-                season: group.currentSeason},
-               function(error, createdScore) {
+  Score.create({participant: userId, season: group.currentSeason})
+  .then(function(createdScore) {
+    newScore = createdScore;
     // Update current season
-    var Season = Group.app.models.Season;
-    Season.findById(group.currentSeason, function(error, season) {
-      season.scores.push(createdScore.id);
-      season.save(function(error) {
-        if (error) {
-          console.log('Error updating current season in group');
-          callback(error);
-        } else {
-          // Add participant to group
-          group.participants.push(userId);
-          group.save(function(error, updatedGroup) {
-            if (error) {
-              console.log('Error adding participant');
-              callback(error);
-            } else {
-              callback(null);
-            }
-          });
-        }
-      });
-    });
+    return Season.findById(group.currentSeason);
+  })
+  .then(function(season) {
+    season.scores.push(newScore.id);
+    return season.save();
+  })
+  .then(function(updatedSeason) {
+    callback(null);
+  })
+  .catch(function(error) {
+    console.log('Error adding participant');
+    callback(error);
   });
 }
 
@@ -65,33 +59,33 @@ module.exports = function(Group) {
   */
   Group.prototype.participantsInGroup = function(req, callback) {
     var groupId = req.params['id'];
-    Group.findById(groupId, function(error, group) {
-      if (error) {
-        callback(error, null);
-      } else {
-        if (group.participants) {
-          var PicksUser = Group.app.models.PicksUser;
-          var participants = [];
-          async.eachLimit(group.participants, 1, function(id, cb) {
-            PicksUser.findById(id, function(error, user) {
-              if (error) {
-                cb(error);
-              } else {
-                participants.push(user);
-                cb();
-              }
-            });
-          }, function(error) {
-            if (error) {
-              callback(error, null);
-            } else {
-              callback(null, participants);
-            }
+    var PicksUser = Group.app.models.PicksUser;
+    var participants = [];
+    Group.findById(groupId)
+    .then(function(group) {
+      if (group.participants) {
+        async.eachLimit(group.participants, 1, function(id, cb) {
+          PicksUser.findById(id)
+          .then(function(user) {
+            participants.push(user);
+            cb();
+          })
+          .catch(function(error) {
+            cb(error);
           });
-        } else {
-          callback(null, []);
-        }
+        }, function(error) {
+          if (error) {
+            return Promise.reject(error);
+          } else {
+            callback(null, participants);
+          }
+        });
+      } else {
+        callback(null, []);
       }
+    })
+    .catch(function(error) {
+      callback(error, null);
     });
   };
 
@@ -103,52 +97,51 @@ module.exports = function(Group) {
   Group.prototype.join = function(userId, req, callback) {
     var groupId = req.params['id'];
     // Get the group from the database
-    Group.findById(groupId, function(error, group) {
-      if (error) {
-        console.log('Error finding group');
-        callback(error);
+    Group.findById(groupId)
+    .then(function(group) {
+      // First check if the user is already participanting
+      if (group.creator == userId) {
+        // The creator is technically already in the group
+        console.log('Creator is already in group');
+        var creatorInGroupError = new Error();
+        creatorInGroupError.status = 400;
+        creatorInGroupError.message = 'Creator is already in group.';
+        creatorInGroupError.code = 'BAD_REQUEST';
+        callback(creatorInGroupError);
+      } else if (group.participants === null) {
+        // Create the first participant
+        console.log('Adding first user');
+        var participants = [];
+        group.participants = participants;
+        addParticipant(Group, group, userId, function(error) {
+          if (error) {
+            callback(error);
+          } else {
+            callback(null);
+          }
+        });
+      } else if (group.participants.includes(userId)) {
+        // User is already in group
+        console.log('User is alrady in group');
+        var userInGroupError = new Error();
+        userInGroupError.status = 400;
+        userInGroupError.message = 'User is already in group.';
+        userInGroupError.code = 'BAD_REQUEST';
+        callback(userInGroupError);
       } else {
-        // First check if the user is already participanting
-        if (group.creator == userId) {
-          // The creator is technically already in the group
-          console.log('Creator is already in group');
-          var creatorInGroupError = new Error();
-          creatorInGroupError.status = 400;
-          creatorInGroupError.message = 'Creator is already in group.';
-          creatorInGroupError.code = 'BAD_REQUEST';
-          callback(creatorInGroupError);
-        } else if (group.participants === null) {
-          // Create the first participant
-          console.log('Adding first user');
-          var participants = [];
-          group.participants = participants;
-          addParticipant(Group, group, userId, function(error) {
-            if (error) {
-              callback(error);
-            } else {
-              callback(null);
-            }
-          });
-        } else if (group.participants.includes(userId)) {
-          // User is already in group
-          console.log('User is alrady in group');
-          var userInGroupError = new Error();
-          userInGroupError.status = 400;
-          userInGroupError.message = 'User is already in group.';
-          userInGroupError.code = 'BAD_REQUEST';
-          callback(userInGroupError);
-        } else {
-          // Add a new participant
-          console.log('Add additional user');
-          addParticipant(Group, group, userId, function(error) {
-            if (error) {
-              callback(error);
-            } else {
-              callback(null);
-            }
-          });
-        }
+        // Add a new participant
+        console.log('Add additional user');
+        addParticipant(Group, group, userId, function(error) {
+          if (error) {
+            callback(error);
+          } else {
+            callback(null);
+          }
+        });
       }
+    })
+    .catch(function(error) {
+      callback(error);
     });
   };
 
@@ -166,24 +159,23 @@ module.exports = function(Group) {
       filterObject['isprivate'] = isPrivate;
     }
     // Find groups based on filter object
-    Group.find({where: filterObject}, function(error, results) {
-      if (error) {
-        console.log('Error getting objects');
-        callback(error, null);
+    Group.find({where: filterObject})
+    .then(function(results) {
+      if (participantId) {
+        results = results.filter(function(group) {
+          if (group.participants) {
+            return group.participants.includes(participantId);
+          } else {
+            return false;
+          }
+        });
+        callback(null, results);
       } else {
-        if (participantId) {
-          results = results.filter(function(group) {
-            if (group.participants) {
-              return group.participants.includes(participantId);
-            } else {
-              return false;
-            }
-          });
-          callback(null, results);
-        } else {
-          callback(null, results);
-        }
+        callback(null, results);
       }
+    })
+    .catch(function(error) {
+      callback(error, null);
     });
   };
 
@@ -204,13 +196,13 @@ module.exports = function(Group) {
       filterObject['isprivate'] = isPrivate;
     }
     // Find groups based on filter object
-    Group.find({where: filterObject}, function(error, results) {
-      if (error) {
-        console.log('Error getting objects');
-        callback(error, null);
-      } else {
-        callback(null, results);
-      }
+    Group.find({where: filterObject})
+    .then(function(results) {
+      callback(null, results);
+    })
+    .catch(function(error) {
+      console.log('Error getting objects');
+      callback(error, null);
     });
   };
 
@@ -226,65 +218,46 @@ module.exports = function(Group) {
   Group.afterRemote('create', function(ctx, modelInstance, next) {
     // Get the current season and week of the NFL
     var Nfl = Group.app.models.Nfl;
-    Nfl.find(function(error, results) {
-      if (error) {
-        // Need to come up with way to handle error
-        console.log(error);
-        next();
-      } else {
-        // Create season for group
-        var nfl = results[0];
-        var Season = Group.app.models.Season;
-        Season.create({season: nfl.currentSeason, group: modelInstance.id},
-                      function(error, createdSeason) {
-          if (error) {
-            console.log(error);
-            next();
-          } else {
-            // Create week for season
-            var Week = Group.app.models.Week;
-            Week.create({season: createdSeason.id, week: nfl.currentWeek},
-                        function(error, createdWeek) {
-              if (error) {
-                console.log(error);
-                next();
-              } else {
-                // Create score for created season of the group creator
-                var Score = Group.app.models.Score;
-                Score.create({participant: modelInstance.creator,
-                              season: createdSeason.id},
-                             function(error, createdScore) {
-                  if (error) {
-                    console.log(error);
-                    next();
-                  } else {
-                    // Update created season
-                    createdSeason.scores = [createdScore.id];
-                    createdSeason.week = createdWeek.id;
-                    createdSeason.save(function(error, updatedSeason) {
-                      if (error) {
-                        console.log(error);
-                        next();
-                      } else {
-                        // Update created group
-                        modelInstance.currentSeason = updatedSeason.id;
-                        modelInstance.save(function(error, updatedGroup) {
-                          if (error) {
-                            console.log(error);
-                            next();
-                          } else {
-                            next();
-                          }
-                        });
-                      }
-                    });
-                  }
-                });
-              }
-            });
-          }
-        });
-      }
+    var Season = Group.app.models.Season;
+    var Week = Group.app.models.Week;
+    var Score = Group.app.models.Score;
+    let nfl, newSeason, newWeek;
+    Nfl.find()
+    .then(function(results) {
+      nfl = results[0];
+      // Create season for group
+      return Season.create({season: nfl.currentSeason,
+                            group: modelInstance.id});
+    })
+    .then(function(season) {
+      newSeason = season;
+      // Create week for season
+      return Week.create({season: newSeason.id, week: nfl.currentWeek});
+    })
+    .then(function(week) {
+      newWeek = week;
+      // Create score for created season of the group creator
+      return Score.create({participant: modelInstance.creator,
+                           season: newSeason.id});
+    })
+    .then(function(score) {
+      // Update created season
+      newSeason.scores = [score.id];
+      newSeason.week = newWeek.id;
+      return newSeason.save();
+    })
+    .then(function(updatedSeason) {
+      newSeason = updatedSeason;
+      // Update created group
+      modelInstance.currentSeason = newSeason.id;
+      return modelInstance.save();
+    })
+    .then(function(updatedGroup) {
+      next();
+    })
+    .catch(function(error) {
+      console.log(error);
+      next();
     });
   });
 };

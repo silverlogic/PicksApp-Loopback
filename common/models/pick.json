@@ -26,6 +26,10 @@
     "week": {
       "type": "number",
       "required": true
+    },
+    "selectedLoser": {
+      "type": "string",
+      "required": true
     }
   },
   "validations": [],
@@ -44,5 +48,37 @@
       "permission": "ALLOW"
     }
   ],
-  "methods": {}
+  "methods": {
+    "submitPicks": {
+      "accepts": [
+        {
+          "arg": "picks",
+          "type": "array",
+          "required": true,
+          "description": "An array of picks for a given participant. For each pick, if the user is updating it, provide the model id of the object. Otherwise, it will be a new pick for the participant."
+        },
+        {
+          "arg": "week",
+          "type": "number",
+          "required": true,
+          "description": "Model id of the week that the picks will be associated with."
+        }
+      ],
+      "returns": [
+        {
+          "arg": "results",
+          "type": "array",
+          "root": true,
+          "description": "An array of pick objects."
+        }
+      ],
+      "description": "Submits a list of picks for a week in a season. The client side would validate if the pick can be submitted or updated based on the start time of a game.",
+      "http": [
+        {
+          "path": "/submit-picks",
+          "verb": "post"
+        }
+      ]
+    }
+  }
 }
