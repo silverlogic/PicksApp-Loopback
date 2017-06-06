@@ -19,7 +19,6 @@ module.exports = function(app) {
     } else {
       // Update current model
       var nfl = nflResults[0];
-      console.log(nfl);
       console.log('NFL model will be updated');
       return Nfl.upsert({id: nfl.id, currentSeason: scheduleResults['season'],
                          currentWeek: scheduleResults['week']});
