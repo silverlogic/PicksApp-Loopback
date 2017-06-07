@@ -2,6 +2,26 @@
 var async = require('async');
 var Promise = require('bluebird');
 
+/**
+ * Filters an array of groups by the given search query and sorts it in
+ * alphabetical order.
+ * @param {string} q The search query. This will filter groups by the name
+                     containg the given query.
+ * @param {array} groups The group to perform the operations on.
+ * @return {Promise}
+ */
+function filterGroupsBySearch(q, groups) {
+  return new Promise(function(resolve, reject) {
+    var newResults = groups.filter(function(group) {
+      return group.name.includes(q);
+    });
+    newResults.sort(function(a, b) {
+      return (a.name < b.name) ? -1 : (a.name > b.name) ? 1 : 0;
+    });
+    resolve(newResults);
+  });
+}
+
 module.exports = function(Group) {
   // Disable endpoints not needed
   Group.disableRemoteMethod('upsert', true);
@@ -162,6 +182,71 @@ module.exports = function(Group) {
     })
     .catch(function(error) {
       console.log('Error getting objects');
+      callback(error, null);
+    });
+  };
+
+  /**
+  * Retrieves all groups that a user has created or is participating in.
+  * @param {number} userId Model id of the user that created or is
+                    participanting in a group.
+  * @param {string} q A search query. This will filter groups by the name
+                      containg the given query.
+  * @param {Function(Error, array)} callback
+  */
+  Group.groupsForUser = function(userId, q, callback) {
+    Group.find()
+    .then(function(groups) {
+      // Filter groups by userId in creator field
+      var creatorGroups = groups.filter(function(group) {
+        return group.creator == userId;
+      });
+      // Filter groups by userId in participants field
+      var participantGroups = groups.filter(function(group) {
+        if (group.participant) {
+          return group.participants.includes(userId);
+        } else {
+          return false;
+        }
+      });
+      var userGroups = creatorGroups.concat(participantGroups);
+      if (q) {
+        // Filter groups by search query
+        return filterGroupsBySearch(q, userGroups);
+      } else {
+        return Promise.resolve(userGroups);
+      }
+    })
+    .then(function(results) {
+      callback(null, results);
+    })
+    .catch(function(error) {
+      console.log(error);
+      callback(error, null);
+    });
+  };
+
+  /**
+  * Retrieves all public groups.
+  * @param {string} q A search query. This will filter groups by the name
+                      containg the given query.
+  * @param {Function(Error, array)} callback
+  */
+  Group.publicGroups = function(q, callback) {
+    Group.find({where: {isPrivate: false}})
+    .then(function(groups) {
+      if (q) {
+        // Filter groups by search query
+        return filterGroupsBySearch(q, groups);
+      } else {
+        return Promise.resolve(groups);
+      }
+    })
+    .then(function(results) {
+      callback(null, results);
+    })
+    .catch(function(error) {
+      console.log(error);
       callback(error, null);
     });
   };
