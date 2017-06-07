@@ -110,7 +110,7 @@
           "description": "An array of group objects."
         }
       ],
-      "description": "Finds all instances of the model based on a participant.",
+      "description": "Finds all instances of the model based on a participant. Soon will be deprecated.",
       "http": [
         {
           "path": "/groupsForParticipants",
@@ -147,7 +147,7 @@
           "description": "An array of group objects."
         }
       ],
-      "description": "Finds all instances of the model based on a creator.",
+      "description": "Finds all instances of the model based on a creator. Soon will be deprecated.",
       "http": [
         {
           "path": "/groupsForCreator",
@@ -178,6 +178,71 @@
       "http": [
         {
           "path": "/participants",
+          "verb": "get"
+        }
+      ]
+    },
+    "groupsForUser": {
+      "accepts": [
+        {
+          "arg": "userId",
+          "type": "number",
+          "required": true,
+          "description": "Model id of the user that created or is participanting in a group.",
+          "http": {
+            "source": "query"
+          }
+        },
+        {
+          "arg": "q",
+          "type": "string",
+          "required": false,
+          "description": "A search query. This will filter groups by the name containg the given query. When provided, the results are returned in alphabetical order.",
+          "http": {
+            "source": "query"
+          }
+        }
+      ],
+      "returns": [
+        {
+          "arg": "results",
+          "type": "array",
+          "root": true,
+          "description": "An array of group objects."
+        }
+      ],
+      "description": "Retrieves all groups that a user has created or is participating in.",
+      "http": [
+        {
+          "path": "/groups-user",
+          "verb": "get"
+        }
+      ]
+    },
+    "publicGroups": {
+      "accepts": [
+        {
+          "arg": "q",
+          "type": "string",
+          "required": false,
+          "description": "A search query. This will filter groups by the name containg the given query. When provided, the results are returned in alphabetical order.",
+          "http": {
+            "source": "query"
+          }
+        }
+      ],
+      "returns": [
+        {
+          "arg": "results",
+          "type": "array",
+          "root": true,
+          "description": "An array of group objects."
+        }
+      ],
+      "description": "Retrieves all public groups.",
+      "http": [
+        {
+          "path": "/groups-public",
           "verb": "get"
         }
       ]
