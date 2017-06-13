@@ -2,7 +2,7 @@
 var async = require('async');
 
 module.exports = function(app) {
-  var dataSource = app.dataSources.ComposePostgreSQL;
+  var dataSource = app.dataSources.db;
   var tables = [
     'User',
     'AccessToken',
