@@ -1,12 +1,12 @@
 {
   "db": {
-    "host": "db",
-    "port": 5432,
-    "url": "",
-    "database": "testdb",
-    "password": "pass",
+    "host": "",
+    "port": 0,
+    "url": "postgres://admin:GDQWAQIKICXZRBKH@sl-us-south-1-portal.1.dblayer.com:16966/compose",
+    "database": "",
+    "password": "",
     "name": "db",
-    "user": "root",
+    "user": "",
     "connector": "postgresql"
   },
   "ScheduleScrapper": {

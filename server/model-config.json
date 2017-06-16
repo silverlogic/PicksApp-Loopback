@@ -14,7 +14,7 @@
     ]
   },
   "User": {
-    "dataSource": "ComposePostgreSQL",
+    "dataSource": "db",
     "options": {
       "postgresql": {
         "scheme": "picksapp",
@@ -23,7 +23,7 @@
     }
   },
   "AccessToken": {
-    "dataSource": "ComposePostgreSQL",
+    "dataSource": "db",
     "public": false,
     "relations": {
       "user": {
@@ -40,7 +40,7 @@
     }
   },
   "ACL": {
-    "dataSource": "ComposePostgreSQL",
+    "dataSource": "db",
     "public": false,
     "options": {
       "postgresql": {
@@ -50,7 +50,7 @@
     }
   },
   "RoleMapping": {
-    "dataSource": "ComposePostgreSQL",
+    "dataSource": "db",
     "public": false,
     "options": {
       "strictObjectIDCoercion": true,
@@ -61,7 +61,7 @@
     }
   },
   "Role": {
-    "dataSource": "ComposePostgreSQL",
+    "dataSource": "db",
     "public": false,
     "options": {
       "postgresql": {
@@ -71,11 +71,11 @@
     }
   },
   "PicksUser": {
-    "dataSource": "ComposePostgreSQL",
+    "dataSource": "db",
     "public": true
   },
   "Group": {
-    "dataSource": "ComposePostgreSQL",
+    "dataSource": "db",
     "public": true
   },
   "Schedule": {
@@ -83,23 +83,23 @@
     "public": true
   },
   "Season": {
-    "dataSource": "ComposePostgreSQL",
+    "dataSource": "db",
     "public": true
   },
   "Score": {
-    "dataSource": "ComposePostgreSQL",
+    "dataSource": "db",
     "public": true
   },
   "Week": {
-    "dataSource": "ComposePostgreSQL",
+    "dataSource": "db",
     "public": true
   },
   "Pick": {
-    "dataSource": "ComposePostgreSQL",
+    "dataSource": "db",
     "public": true
   },
   "Nfl": {
-    "dataSource": "ComposePostgreSQL",
+    "dataSource": "db",
     "public": false
   }
 }

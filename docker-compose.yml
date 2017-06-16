@@ -1,0 +1,17 @@
+db:
+  image: postgres
+  ports:
+    - "5432:5432"
+  environment:
+    - POSTGRES_PASSWORD=pass
+    - POSTGRES_USER=admin
+    - POSTGRES_DB=testdb
+app:
+  image: node
+  ports:
+    - "3000:3000"
+  volumes:
+    - .:/root/PicksApp-Loopback
+  command: bash -c "cd /root/PicksApp-Loopback && npm install && export NODE_ENV="development" && node ."
+  links:
+    - db
