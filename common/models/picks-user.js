@@ -54,136 +54,6 @@ module.exports = function(PicksUser) {
 
   // Remote Methods
 
-  /**
-   * Logins in a user that logged in using the Facebook SDK.
-   * @param {string} facebook_access_token An access token given from the
-                                           Facebook SDK for interacting with
-                                           Facebook's Graph API.
-   * @param {Function(Error, string)} callback
-   */
-  PicksUser.loginWithFacebook = function(facebookAccessToken, callback) {
-    // Locate the user in the database based on their Facebook access token
-    PicksUser.find({where: {facebookAccessToken: facebookAccessToken}})
-    .then(function(picksUsers) {
-      if (picksUsers.length == 0 || picksUsers.length > 1) {
-        var userAlreadyExistsError = new Error();
-        userAlreadyExistsError.status = 404;
-        userAlreadyExistsError.message = 'Facebook user does not exist';
-        userAlreadyExistsError.code = 'NOT_FOUND';
-        return Promise.reject(userAlreadyExistsError);
-      }
-      var picksUser = picksUsers[0];
-      // Reset and generate access token for user
-      generateAuthorizationToken(picksUser, function(error, accessToken) {
-        if (error) {
-          return Promise.reject(error);
-        } else {
-          var json = {'id': accessToken.id};
-          callback(null, json);
-        }
-      });
-    })
-    .catch(function(error) {
-      callback(error, null);
-    });
-  };
-
-  /**
-   * Signs up a user with a Facebook account.
-   * @param {string} facebookAccessToken An access token given from the
-                                         Facebook SDK for interacting with
-                                         Facebook's Graph API.
-   * @param {string} firstName The first name of the user.
-   * @param {string} lastName The last name of the user.
-   * @param {string} email The email of the user used for Facebook.
-   * @param {string} avatarUrl The url to the user's avatar used in Facebook.
-   * @param {Function(Error, object)} callback
-   */
-   PicksUser.signupWithFacebook = function(facebookAccessToken, firstName,
-                                           lastName, email, avatarUrl,
-                                           callback) {
-     var Group = PicksUser.app.models.Group;
-     var Score = PicksUser.app.models.Score;
-     var Season = PicksUser.app.models.Season;
-     var isNewUser = false;
-     var globalGroup;
-     let accessTokenId, newUser, newScore;
-     // First check if the database already has a user with the given email
-     PicksUser.find({where: {email: email}})
-     .then(function(picksUsers) {
-       if (picksUsers.length == 1) {
-         // Check if email has already a Facebook access token.
-         // This could mean the access token of that user expired.
-         var picksUser = picksUsers[0];
-         if (picksUser.facebookAccessToken === null) {
-           var emailError = new Error();
-           emailError.status = 400;
-           emailError.message = 'email_already_in_use';
-           emailError.code = 'BAD_REQUEST';
-           return Promise.reject(emailError);
-         } else {
-           // Only need to update the Facebook access token with the new one.
-           picksUser.facebookAccessToken = facebookAccessToken;
-           // Update the user
-           return picksUser.save();
-         }
-       } else {
-         // Create new Facebook user
-         isNewUser = true;
-         return PicksUser.create({facebookAccessToken: facebookAccessToken,
-                                  firstName: firstName, lastName: lastName,
-                                  email: email, avatarUrl: avatarUrl});
-       }
-     })
-     .then(function(user) {
-       newUser = user;
-       // Generate new access token
-       return generateAuthorizationToken(user);
-     })
-     .then(function(accessToken) {
-        accessTokenId = accessToken.id;
-        if (isNewUser) {
-          // Add user to global group
-          return Group.find({where: {name: 'Global'}});
-        } else {
-          callback(null, {'id': accessTokenId});
-          return Promise.reject(null);
-        }
-     })
-     .then(function(groups) {
-       globalGroup = groups[0];
-       if (globalGroup.participants) {
-         globalGroup.participants.push(newUser.id);
-       } else {
-         globalGroup.participants = [newUser.id];
-       }
-       return globalGroup.save();
-     })
-     .then(function(updatedGroup) {
-       globalGroup = updatedGroup;
-       // Create score for new participant
-       return Score.create({participant: newUser.id,
-                            season: updatedGroup.currentSeason});
-     })
-     .then(function(score) {
-        newScore = score;
-        return Season.findById(globalGroup.currentSeason);
-     })
-     .then(function(season) {
-       season.scores.push(newScore.id);
-       return season.save();
-     })
-     .then(function(updatedSeason) {
-       callback(null, {'id': accessTokenId});
-     })
-     .catch(function(error) {
-       if (error) {
-         console.log(error);
-         callback(error, null);
-       }
-     });
-   };
-
    /**
     * Gets the current user with an authorization token.
     * @param {Function(Error, object)} callback
@@ -206,4 +76,126 @@ module.exports = function(PicksUser) {
        callback(error, null);
      });
    };
+
+   /**
+    * Logins a user with a Facebook account.
+    * @param {string} oauthToken The oauth token that is received from redirect
+                                 url when doing OAuth 2 authentication.
+    * @param {string} redirectUrl A url representing the redirect used for
+                                  getting the oauth token.
+    * @param {Function(Error, string)} callback
+    */
+    PicksUser.loginFacebook = function(oauthToken, redirectUrl, callback) {
+      var nodeEnvironment = process.env.NODE_ENV;
+      var appId = nodeEnvironment == 'production' ?
+      process.env.FACEBOOK_APP_ID_PRODUCTION :
+      process.env.FACEBOOK_APP_ID_STAGING;
+      var appSecret = nodeEnvironment == 'production' ?
+      process.env.FACEBOOK_APP_SECRET_PRODUCTION :
+      process.env.FACEBOOK_APP_SECRET_STAGING;
+      var Facebook = PicksUser.app.dataSources.Facebook;
+      var Group = PicksUser.app.models.Group;
+      var Score = PicksUser.app.models.Score;
+      var Season = PicksUser.app.models.Season;
+      var isNewUser = false;
+      var globalGroup;
+      let userResponse, accessTokenId, newUser, newScore, facebookAccessToken;
+      // Exchange oauth token for access token
+      Facebook.accessToken(appId, appSecret, redirectUrl, oauthToken)
+      .then(function(response) {
+        // Get the access token to get the current user's Facebook id
+        facebookAccessToken = response['access_token'];
+        return Facebook.me(facebookAccessToken);
+      })
+      .then(function(response) {
+        // Get the id and use for getting user info
+        var id = response['id'];
+        return Facebook.user(id, facebookAccessToken);
+      })
+      .then(function(response) {
+        userResponse = response;
+        var firstName = response['first_name'];
+        var lastName = response['last_name'];
+        var avatarUrl = response['picture.data.url'];
+        var email = response['email'];
+        // Need to check if a user already exists
+        return PicksUser.find({where: {email: email}});
+      })
+      .then(function(results) {
+        if (results.length == 1) {
+          // Check if the user is a Facebook user or not
+          var user = results[0];
+          if (!user.isFacebookUser) {
+            var emailError = new Error();
+            emailError.status = 400;
+            emailError.message = 'email_already_in_use';
+            emailError.code = 'BAD_REQUEST';
+            return Promise.reject(emailError);
+          } else {
+            // The user is just logging in
+            user.firstName = userResponse['first_name'];
+            user.lastName = userResponse['last_name'];
+            user.avatarUrl = userResponse['picture.data.url'];
+            user.email = userResponse['email'];
+            user.isFacebookUser = true;
+            return user.save();
+          }
+        } else {
+          // Create new user
+          isNewUser = true;
+          return PicksUser.create({firstName: userResponse['first_name'],
+                                   lastName: userResponse['last_name'],
+                                   avatarUrl: userResponse['picture.data.url'],
+                                   email: userResponse['email'],
+                                   isFacebookUser: true});
+        }
+      })
+      .then(function(user) {
+        // Generate authorization token
+        newUser = user;
+        return generateAuthorizationToken(user);
+      })
+      .then(function(accessToken) {
+        accessTokenId = accessToken.id;
+        if (isNewUser) {
+          // Add user to global group
+          return Group.find({where: {name: 'Global'}});
+        } else {
+          callback(null, {'id': accessTokenId});
+          return Promise.reject(null);
+        }
+      })
+      .then(function(groups) {
+        globalGroup = groups[0];
+        if (globalGroup.participants) {
+          globalGroup.participants.push(newUser.id);
+        } else {
+          globalGroup.participants = [newUser.id];
+        }
+        return globalGroup.save();
+      })
+      .then(function(updatedGroup) {
+        globalGroup = updatedGroup;
+        // Create score for new participant
+        return Score.create({participant: newUser.id,
+                             season: updatedGroup.currentSeason});
+      })
+      .then(function(score) {
+        newScore = score;
+        return Season.findById(globalGroup.currentSeason);
+      })
+      .then(function(season) {
+        season.scores.push(newScore.id);
+        return season.save();
+      })
+      .then(function(updatedSeason) {
+        callback(null, {'id': accessTokenId});
+      })
+      .catch(function(error) {
+        if (error) {
+          console.log(error);
+          callback(error, null);
+        }
+      });
+    };
 };

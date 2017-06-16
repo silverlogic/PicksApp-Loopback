@@ -10,12 +10,9 @@
     }
   },
   "hidden": [
-    "facebookAccessToken"
+    "isFacebookUser"
   ],
   "properties": {
-    "facebookAccessToken": {
-      "type": "string"
-    },
     "firstName": {
       "type": "string",
       "required": true
@@ -36,18 +33,15 @@
     },
     "password": {
       "type": "string"
+    },
+    "isFacebookUser": {
+      "type": "boolean",
+      "default": false
     }
   },
   "validations": [],
   "relations": {},
   "acls": [
-    {
-      "accessType": "EXECUTE",
-      "principalType": "ROLE",
-      "principalId": "$everyone",
-      "permission": "ALLOW",
-      "property": "loginWithFacebook"
-    },
     {
       "accessType": "*",
       "principalType": "ROLE",
@@ -63,93 +57,19 @@
     {
       "accessType": "EXECUTE",
       "principalType": "ROLE",
-      "principalId": "$everyone",
+      "principalId": "$owner",
       "permission": "ALLOW",
-      "property": "signupWithFacebook"
+      "property": "currentUser"
     },
     {
       "accessType": "EXECUTE",
       "principalType": "ROLE",
-      "principalId": "$owner",
+      "principalId": "$everyone",
       "permission": "ALLOW",
-      "property": "currentUser"
+      "property": "loginFacebook"
     }
   ],
   "methods": {
-    "loginWithFacebook": {
-      "accepts": [
-        {
-          "arg": "facebookAccessToken",
-          "type": "string",
-          "required": true,
-          "description": "An access token given from the Facebook SDK for interacting with Facebook's Graph API."
-        }
-      ],
-      "returns": [
-        {
-          "arg": "id",
-          "type": "object",
-          "root": true,
-          "description": "An authorization token used for performing authenticated requests."
-        }
-      ],
-      "description": "Logins in a user that logged in using the Facebook SDK.",
-      "http": [
-        {
-          "path": "/login-facebook",
-          "verb": "post"
-        }
-      ]
-    },
-    "signupWithFacebook": {
-      "accepts": [
-        {
-          "arg": "facebookAccessToken",
-          "type": "string",
-          "required": true,
-          "description": "An access token given from the Facebook SDK for interacting with Facebook's Graph API."
-        },
-        {
-          "arg": "firstName",
-          "type": "string",
-          "required": true,
-          "description": "The first name of the user."
-        },
-        {
-          "arg": "lastName",
-          "type": "string",
-          "required": true,
-          "description": "The last name of the user."
-        },
-        {
-          "arg": "email",
-          "type": "string",
-          "required": true,
-          "description": "The email of the user used for Facebook."
-        },
-        {
-          "arg": "avatarUrl",
-          "type": "string",
-          "required": false,
-          "description": "The url to the user's avatar used in Facebook."
-        }
-      ],
-      "returns": [
-        {
-          "arg": "id",
-          "type": "object",
-          "root": true,
-          "description": "An authorization token used for performing authenticated requests."
-        }
-      ],
-      "description": "Signs up a user with a Facebook account.",
-      "http": [
-        {
-          "path": "/signup-facebook",
-          "verb": "post"
-        }
-      ]
-    },
     "currentUser": {
       "accepts": [
         {
@@ -174,6 +94,37 @@
         {
           "path": "/me",
           "verb": "get"
+        }
+      ]
+    },
+    "loginFacebook": {
+      "accepts": [
+        {
+          "arg": "oauthToken",
+          "type": "string",
+          "required": true,
+          "description": "The oauth token that is received from redirect url when doing OAuth 2 authentication."
+        },
+        {
+          "arg": "redirectUrl",
+          "type": "string",
+          "required": true,
+          "description": "A url representing the redirect used for getting the oauth token."
+        }
+      ],
+      "returns": [
+        {
+          "arg": "id",
+          "type": "string",
+          "root": true,
+          "description": "An authorization token used for performing authenticated requests."
+        }
+      ],
+      "description": "Logins a user with a Facebook account.",
+      "http": [
+        {
+          "path": "/login-facebook",
+          "verb": "post"
         }
       ]
     }
