@@ -114,10 +114,7 @@ module.exports = function(PicksUser) {
       })
       .then(function(response) {
         userResponse = response;
-        var firstName = response['first_name'];
-        var lastName = response['last_name'];
-        var avatarUrl = response['picture.data.url'];
-        var email = response['email'];
+        var email = userResponse['email'];
         // Need to check if a user already exists
         return PicksUser.find({where: {email: email}});
       })
@@ -135,7 +132,9 @@ module.exports = function(PicksUser) {
             // The user is just logging in
             user.firstName = userResponse['first_name'];
             user.lastName = userResponse['last_name'];
-            user.avatarUrl = userResponse['picture.data.url'];
+            var picture = userResponse['picture'];
+            var data = picture['data'];
+            user.avatarUrl = data['url'];
             user.email = userResponse['email'];
             user.isFacebookUser = true;
             return user.save();
@@ -143,9 +142,11 @@ module.exports = function(PicksUser) {
         } else {
           // Create new user
           isNewUser = true;
+          var pictureObject = userResponse['picture'];
+          var dataObject = pictureObject['data'];
           return PicksUser.create({firstName: userResponse['first_name'],
                                    lastName: userResponse['last_name'],
-                                   avatarUrl: userResponse['picture.data.url'],
+                                   avatarUrl: dataObject['url'],
                                    email: userResponse['email'],
                                    isFacebookUser: true});
         }
