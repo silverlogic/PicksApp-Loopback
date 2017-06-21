@@ -3,17 +3,17 @@ var async = require('async');
 var Promise = require('bluebird');
 
 /**
- * Filters an array of groups by the given search query and sorts it in
- * alphabetical order.
- * @param {string} q The search query. This will filter groups by the name
-                     containg the given query.
- * @param {array} groups The group to perform the operations on.
- * @return {Promise}
- */
+* Filters an array of groups by the given search query and sorts it in
+* alphabetical order.
+* @param {string} q The search query. This will filter groups by the name
+                    containg the given query.
+* @param {array} groups The group to perform the operations on.
+* @return {Promise}
+*/
 function filterGroupsBySearch(q, groups) {
   return new Promise(function(resolve, reject) {
     var newResults = groups.filter(function(group) {
-      return group.name.includes(q);
+      return group.name.toLowerCase().includes(q.toLowerCase());
     });
     newResults.sort(function(a, b) {
       return (a.name < b.name) ? -1 : (a.name > b.name) ? 1 : 0;
@@ -122,67 +122,6 @@ module.exports = function(Group) {
     })
     .catch(function(error) {
       callback(error);
-    });
-  };
-
-  /**
-  * Finds all instances of the model based on a participant.
-  * @param {number} participantId Model id of the user that is part of a group.
-  * @param {boolean} isPrivate Boolean value that determines if a group is
-                               public or private.
-  * @param {Function(Error, array)} callback
-  */
-  Group.groupsForParticipants = function(participantId, isPrivate, callback) {
-    // Build filter object
-    var filterObject = {};
-    if (isPrivate) {
-      filterObject['isprivate'] = isPrivate;
-    }
-    // Find groups based on filter object
-    Group.find({where: filterObject})
-    .then(function(results) {
-      if (participantId) {
-        results = results.filter(function(group) {
-          if (group.participants) {
-            return group.participants.includes(participantId);
-          } else {
-            return false;
-          }
-        });
-        callback(null, results);
-      } else {
-        callback(null, results);
-      }
-    })
-    .catch(function(error) {
-      callback(error, null);
-    });
-  };
-
-  /**
-  * Finds all instances of the model based on a creator.
-  * @param {number} creatorId Model id of the user that created a group.
-  * @param {boolean} isPrivate Boolean value that determines if a group is
-                               public or private.
-  * @param {Function(Error, array)} callback
-  */
-  Group.groupsForCreator = function(creatorId, isPrivate, callback) {
-    // Build filter object
-    var filterObject = {};
-    if (creatorId) {
-      filterObject['creator'] = creatorId;
-    }
-    if (isPrivate) {
-      filterObject['isprivate'] = isPrivate;
-    }
-    // Find groups based on filter object
-    Group.find({where: filterObject})
-    .then(function(results) {
-      callback(null, results);
-    })
-    .catch(function(error) {
-      console.log('Error getting objects');
-      callback(error, null);
     });
   };
 
