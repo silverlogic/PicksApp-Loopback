@@ -35,10 +35,14 @@ module.exports = function(app) {
         // All games have finished
         // Calculate winners
         winners = completedGames.map(function(game) {
-          if (game['homeTeamScore'] > game['awayTeamScore']) {
-            return game['homeTeamName'];
+          var awayTeam = game['awayTeam'];
+          var homeTeam = game['homeTeam'];
+          var awayTeamScore = awayTeam['score'];
+          var homeTeamScore = homeTeam['score'];
+          if (homeTeamScore > awayTeamScore) {
+            return homeTeam['teamName'];
           } else {
-            return game['awayTeamName'];
+            return awayTeam['teamName'];
           }
         });
         // Get all seasons currently being used
