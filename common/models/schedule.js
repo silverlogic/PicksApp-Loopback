@@ -43,4 +43,24 @@ module.exports = function(Schedule) {
       callback(error, null);
     });
   };
+
+  /**
+  * Retrieves a mock schedule to use for testing in the staging environment.
+  * @param {number} leagueType The sports league to get a schedule from.
+                               For NFL, use 0.
+  * @param {number} timePeriod The period in time to use. Refer to sport scraper
+                               documentation for more info.
+  * @param {Function(Error, array)} callback
+  */
+  Schedule.mock = function(leagueType, timePeriod, callback) {
+    var ScheduleScrapper = Schedule.app.dataSources.ScheduleScrapper;
+    ScheduleScrapper.mock(leagueType, timePeriod)
+    .then(function(result) {
+      callback(null, result);
+    })
+    .catch(function(error) {
+      console.log('Error getting mock schedule');
+      callback(error, null);
+    });
+  };
 };

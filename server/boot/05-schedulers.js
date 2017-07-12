@@ -1,11 +1,13 @@
 'use strict';
 var cron = require('node-cron');
+var moment = require('moment');
 var Promise = require('bluebird');
 var async = require('async');
 var async2 = require('async');
 
 module.exports = function(app) {
   console.log('Setting up schedulers');
+  var nodeEnvironment = process.env.NODE_ENV;
   var Nfl = app.models.Nfl;
   var Group = app.models.Group;
   var Season = app.models.Season;
@@ -22,8 +24,28 @@ module.exports = function(app) {
     .then(function(results) {
       nfl = results[0];
       currentSeason = nfl.currentSeason;
-      // Get live schedule for current season and week
-      return ScheduleScrapper.live(0, nfl.currentSeason, nfl.currentWeek);
+      if (nodeEnvironment == 'production') {
+        // Get live schedule for current season and week
+        return ScheduleScrapper.live(0, nfl.currentSeason, nfl.currentWeek);
+      } else {
+        // Use mock-schedule for testing purposes
+        // Determine which one to use based on server time
+        // The hour will be in 24-hour format
+        var currentHour = moment().hour();
+        if (currentHour == 19) {
+          // Current hour is 8:00pm
+          // Retrieve mock schedule for all games completed
+          return ScheduleScrapper.mock(0, 2);
+        } else if (currentHour >= 13 && currentHour <= 18) {
+          // Current hour is between 1:00pm and 7:00pm
+          // Retrieve mock schedule for some games completed
+          return ScheduleScrapper.mock(0, 1);
+        } else {
+          // Current hour is between 9:00pm and 12:00pm
+          // Retrieve mock schedule for no games completed
+          return ScheduleScrapper.mock(0, 0);
+        }
+      }
     })
     .then(function(schedule) {
       // Need to check if all games for the current week have completed;
@@ -202,7 +224,7 @@ module.exports = function(app) {
         if (error) {
           return Promise.reject(error);
         } else {
-          console.log('All groups have been updating with new season');
+          console.log('All groups have been updated with new season');
         }
       });
     })

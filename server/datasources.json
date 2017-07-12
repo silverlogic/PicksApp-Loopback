@@ -60,6 +60,21 @@
             "leagueType"
           ]
         }
+      },
+      {
+        "template": {
+          "method": "GET",
+          "url": "https://picksapp-sportsscrapper.mybluemix.net/mock-data/{leagueType}/{timePeriod}",
+          "headers": {
+            "accept": "application/json"
+          }
+        },
+        "functions": {
+          "mock": [
+            "leagueType",
+            "timePeriod"
+          ]
+        }
       }
     ]
   },
