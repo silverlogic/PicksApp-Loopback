@@ -118,9 +118,10 @@ module.exports = function(Group) {
       }
     })
     .then(function() {
-      callback();
+      callback(null);
     })
     .catch(function(error) {
+      console.log(error);
       callback(error);
     });
   };
@@ -142,7 +143,7 @@ module.exports = function(Group) {
       });
       // Filter groups by userId in participants field
       var participantGroups = groups.filter(function(group) {
-        if (group.participant) {
+        if (group.participants) {
           return group.participants.includes(userId);
         } else {
           return false;
@@ -276,8 +277,12 @@ module.exports = function(Group) {
       var Score = Group.app.models.Score;
       var Season = Group.app.models.Season;
       let newScore;
-      // Create score for user
-      Score.create({participant: userId, season: group.currentSeason})
+      group.participants.push(userId);
+      group.save()
+      .then(function(updatedGroup) {
+        // Create score for user
+        return Score.create({participant: userId, season: group.currentSeason});
+      })
       .then(function(createdScore) {
         newScore = createdScore;
         // Update current season

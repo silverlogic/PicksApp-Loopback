@@ -99,10 +99,10 @@ module.exports = function(app) {
               var score = scores[0];
               if (winners.indexOf(pick.selectedWinner) >= 0) {
                 // Participant earns selected points
-                score += pick.selectedPoints;
+                score.score += pick.selectedPoints;
               } else {
                 // Participant loses selected points
-                score -= pick.selectedPoints;
+                score.score -= pick.selectedPoints;
               }
               return score.save();
             })
