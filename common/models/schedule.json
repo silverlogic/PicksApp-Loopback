@@ -151,6 +151,34 @@
           "verb": "get"
         }
       ]
+    },
+    "current": {
+      "accepts": [
+        {
+          "arg": "leagueType",
+          "type": "number",
+          "required": true,
+          "description": "The sports league to get the current season and week number from. For NFL, use 0.",
+          "http": {
+            "source": "query"
+          }
+        }
+      ],
+      "returns": [
+        {
+          "arg": "result",
+          "type": "object",
+          "root": true,
+          "description": "The current season number and week for a given league"
+        }
+      ],
+      "description": "Retrieves the current season and week number.",
+      "http": [
+        {
+          "path": "/current",
+          "verb": "get"
+        }
+      ]
     }
   }
 }
