@@ -194,6 +194,32 @@ module.exports = function(Group) {
   // Remote hooks
 
   /**
+  * Remote hook for checking if a provided group name is already
+  * being used.
+  * @param {string} methodName Name of the method to fire the hook after
+                               completion.
+  * @param {Function(object, object, Function())} callback
+  */
+  Group.beforeRemote('create', function(ctx, modelInstance, next) {
+    Group.find({where: {name: modelInstance.name}})
+    .then(function(groups) {
+      if (groups.length > 0) {
+        var groupNameError = new Error();
+        groupNameError.status = 400;
+        groupNameError.message = 'Group name already in use.';
+        groupNameError.code = 'BAD_REQUEST';
+        next(groupNameError);
+      } else {
+        next();
+      }
+    })
+    .catch(function(error) {
+      console.log('Error checking if group name already exists');
+      next(error);
+    });
+  });
+
+  /**
   * Remote hook for handling when a group is created through the web
   * context.
   * @param {string} methodName Name of the method to fire the hook after

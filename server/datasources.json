@@ -6,7 +6,7 @@
     "database": "testdb",
     "password": "pass",
     "name": "db",
-    "user": "root",
+    "user": "admin",
     "connector": "postgresql"
   },
   "ScheduleScrapper": {

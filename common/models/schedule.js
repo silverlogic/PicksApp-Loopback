@@ -63,4 +63,21 @@ module.exports = function(Schedule) {
       callback(error, null);
     });
   };
+
+  /**
+  * Retrieves the current season and week number.
+  * @param {number} leagueType The sports league to get the current season and week number from. For NFL, use 0.
+  * @param {Function(Error, object)} callback
+  */
+  Schedule.current = function(leagueType, callback) {
+    var ScheduleScrapper = Schedule.app.dataSources.ScheduleScrapper;
+    ScheduleScrapper.current(leagueType)
+    .then(function(result) {
+      callback(null, result);
+    })
+    .catch(function(error) {
+      console.log('Error getting current season and week number');
+      callback(error, null);
+    });
+  };
 };
