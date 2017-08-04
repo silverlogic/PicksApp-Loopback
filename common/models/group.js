@@ -201,7 +201,9 @@ module.exports = function(Group) {
   * @param {Function(object, object, Function())} callback
   */
   Group.beforeRemote('create', function(ctx, modelInstance, next) {
-    Group.find({where: {name: modelInstance.name}})
+    var requestBody = ctx.req.body;
+    var groupName = requestBody['name'];
+    Group.find({where: {name: groupName}})
     .then(function(groups) {
       if (groups.length > 0) {
         var groupNameError = new Error();
