@@ -5,9 +5,11 @@ var Promise = require('bluebird');
 /**
  * Checks that an array of picks posted contains all neccessary data needed.
  * @param {array} picks An array of picks submitted.
+ * @param {boolean} confidenceEnabled Used to determine if confidence points
+ *                                    should be used.
  * @return {object}
  */
- function validateSubmittedPicks(picks) {
+ function validateSubmittedPicks(picks, confidenceEnabled) {
    if (!Array.isArray(picks)) {
      var invalidObjectError = new Error();
      invalidObjectError.status = 400;
@@ -38,6 +40,17 @@ var Promise = require('bluebird');
        missingValuesError.message = 'Values missing for submitted pick';
        missingValuesError.code = 'BAD_REQUEST';
        return missingValuesError;
+     }
+     if (!confidenceEnabled) {
+       if (picksDictionary['selectedPoints'] != 1) {
+         var incorrectPointsError = new Error();
+         incorrectPointsError.status = 400;
+         var errorMessage = 'Confidence for this group is disabled.' +
+                            ' Selected points for picks should be 1.';
+         incorrectPointsError.message = errorMessage;
+         incorrectPointsError.code = 'BAD_REQUEST';
+         return incorrectPointsError;
+       }
      }
    }
    return null;
@@ -72,13 +85,23 @@ module.exports = function(Pick) {
                          pick for the participant.
   * @param {number} week Model id of the week that the picks will be associated
                          with.
+  * @param {number} group Model id of the group that the picks are associated
+                          with. This is for validating that the correct type of
+                          confidence points are being sent.
   * @param {Function(Error, array)} callback
   */
-  Pick.submitPicks = function(picks, week, callback) {
+  Pick.submitPicks = function(picks, week, group, callback) {
     var Week = Pick.app.models.Week;
+    var Group = Pick.app.models.Group;
     var createdPicks = [];
-    // Check if the model id of the week exists
-    Week.exists(week)
+    let confidenceEnabled;
+    // Get the group that the picks are for.
+    Group.findById(group)
+    .then(function(groupInstance) {
+      confidenceEnabled = groupInstance.confidenceEnabled;
+      // Check if the model id of the week exists
+      return Week.exists(week);
+    })
     .then(function(exists) {
       if (exists) {
         // Check that the picks sent is valid

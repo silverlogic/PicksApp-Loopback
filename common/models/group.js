@@ -74,7 +74,51 @@ module.exports = function(Group) {
       }
     })
     .catch(function(error) {
+      console.log(error);
       callback(error, null);
+    });
+  };
+
+  /**
+  * Enables a Group Instance to use confidence points. This means when
+    submitting picks, a user can submit a selected point ranging from 1 to the
+    number of games in the week for the current NFL season.
+  * @param {Function(Error)} callback
+  */
+  Group.prototype.enableConfidencePoints = function(req, callback) {
+    var groupId = req.params['id'];
+    Group.findById(groupId)
+    .then(function(group) {
+      group.confidenceEnabled = true;
+      return group.save();
+    })
+    .then(function(updatedGroup) {
+      callback(null);
+    })
+    .catch(function(error) {
+      console.log(error);
+      callback(error);
+    });
+  };
+
+  /**
+  * Disables a Group Instance from using confidence points. This means when
+    submitting picks, a user can only submit a selected point of 1.
+  * @param {Function(Error)} callback
+  */
+  Group.prototype.disableConfidencePoints = function(req, callback) {
+    var groupId = req.params['id'];
+    Group.findById(groupId)
+    .then(function(group) {
+      group.confidenceEnabled = false;
+      return group.save();
+    })
+    .then(function(updatedGroup) {
+      callback(null);
+    })
+    .catch(function(error) {
+      console.log(error);
+      callback(error);
     });
   };
 
