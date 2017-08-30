@@ -33,6 +33,11 @@
     },
     "currentSeason": {
       "type": "number"
+    },
+    "confidenceEnabled": {
+      "type": "boolean",
+      "required": true,
+      "default": false
     }
   },
   "validations": [],
@@ -170,6 +175,46 @@
         {
           "path": "/groups-public",
           "verb": "get"
+        }
+      ]
+    },
+    "prototype.enableConfidencePoints": {
+      "accepts": [
+        {
+          "arg": "req",
+          "type": "object",
+          "required": true,
+          "http": {
+            "source": "req"
+          }
+        }
+      ],
+      "returns": [],
+      "description": "Enables a Group Instance to use confidence points. This means when submitting picks, a user can submit a selected point ranging from 1 to the number of games in the week for the current NFL season.",
+      "http": [
+        {
+          "path": "/enable-confidence-points",
+          "verb": "post"
+        }
+      ]
+    },
+    "prototype.disableConfidencePoints": {
+      "accepts": [
+        {
+          "arg": "req",
+          "type": "object",
+          "required": true,
+          "http": {
+            "source": "req"
+          }
+        }
+      ],
+      "returns": [],
+      "description": "Disables a Group Instance from using confidence points. This means when submitting picks, a user can only submit a selected point of 1.",
+      "http": [
+        {
+          "path": "/disable-confidence-points",
+          "verb": "delete"
         }
       ]
     }

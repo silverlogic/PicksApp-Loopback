@@ -62,6 +62,12 @@
           "type": "number",
           "required": true,
           "description": "Model id of the week that the picks will be associated with."
+        },
+        {
+          "arg": "group",
+          "type": "number",
+          "required": true,
+          "description": "Model id of the group that the picks are associated with. This is for validating that the correct type of confidence points are being sent."
         }
       ],
       "returns": [
