@@ -105,7 +105,7 @@ module.exports = function(Pick) {
     .then(function(exists) {
       if (exists) {
         // Check that the picks sent is valid
-        var validationError = validateSubmittedPicks(picks);
+        var validationError = validateSubmittedPicks(picks, confidenceEnabled);
         if (validationError) {
           return Promise.reject(validationError);
         } else {
