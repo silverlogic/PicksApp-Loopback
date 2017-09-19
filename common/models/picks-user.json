@@ -75,6 +75,13 @@
       "principalId": "$everyone",
       "permission": "ALLOW",
       "property": "loginFacebook"
+    },
+    {
+      "accessType": "EXECUTE",
+      "principalType": "ROLE",
+      "principalId": "$everyone",
+      "permission": "ALLOW",
+      "property": "generateToken"
     }
   ],
   "methods": {
@@ -132,6 +139,43 @@
       "http": [
         {
           "path": "/login-facebook",
+          "verb": "post"
+        }
+      ]
+    },
+    "generateToken": {
+      "accepts": [
+        {
+          "arg": "email",
+          "type": "string",
+          "required": false,
+          "description": "email of the user"
+        },
+        {
+          "arg": "password",
+          "type": "string",
+          "required": false,
+          "description": "authorized password of using this endpoint"
+        }
+      ],
+      "returns": [
+        {
+          "arg": "token",
+          "type": "string",
+          "root": true,
+          "description": "An authorization token used for performing authenticated requests."
+        },
+        {
+          "arg": "message",
+          "type": "string",
+          "root": true,
+          "description": "An error message if there is an error"
+        }
+      ],
+      "description": "Generate a user token.",
+      "http": [
+        {
+          "path": "/generate-token",
           "verb": "post"
         }
       ]
