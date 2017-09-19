@@ -25,32 +25,76 @@ function generateAuthorizationToken(picksUser) {
 // PicksUser Remote Methods
 module.exports = function(PicksUser) {
   // Disable endpoints not needed
-  PicksUser.disableRemoteMethod('create', true);
-  PicksUser.disableRemoteMethod('upsert', true);
-  PicksUser.disableRemoteMethod('upsertWithWhere', true);
-  PicksUser.disableRemoteMethod('updateAll', true);
-  PicksUser.disableRemoteMethod('updateAttributes', false);
-  PicksUser.disableRemoteMethod('updateAttribute', false);
-  PicksUser.disableRemoteMethod('verify', false);
-  PicksUser.disableRemoteMethod('replaceOrCreate', true);
-  PicksUser.disableRemoteMethod('replaceById', true);
-  PicksUser.disableRemoteMethod('createChangeStream', true);
-  PicksUser.disableRemoteMethod('find', true);
-  PicksUser.disableRemoteMethod('findOne', true);
-  PicksUser.disableRemoteMethod('deleteById', true);
-  PicksUser.disableRemoteMethod('confirm', true);
-  PicksUser.disableRemoteMethod('count', true);
-  PicksUser.disableRemoteMethod('exists', true);
-  PicksUser.disableRemoteMethod('resetPassword', true);
-  PicksUser.disableRemoteMethod('changePassword', true);
-  PicksUser.disableRemoteMethod('login', true);
-  PicksUser.disableRemoteMethod('__count__accessTokens', false);
-  PicksUser.disableRemoteMethod('__create__accessTokens', false);
-  PicksUser.disableRemoteMethod('__delete__accessTokens', false);
-  PicksUser.disableRemoteMethod('__destroyById__accessTokens', false);
-  PicksUser.disableRemoteMethod('__findById__accessTokens', false);
-  PicksUser.disableRemoteMethod('__get__accessTokens', false);
-  PicksUser.disableRemoteMethod('__updateById__accessTokens', false);
+  PicksUser.disableRemoteMethodByName('create');
+  PicksUser.disableRemoteMethodByName('upsert');
+  PicksUser.disableRemoteMethodByName('upsertWithWhere');
+  PicksUser.disableRemoteMethodByName('updateAll');
+  PicksUser.disableRemoteMethodByName('prototype.updateAttributes');
+  PicksUser.disableRemoteMethodByName('prototype.updateAttribute');
+  PicksUser.disableRemoteMethodByName('prototype.verify');
+  PicksUser.disableRemoteMethodByName('replaceOrCreate');
+  PicksUser.disableRemoteMethodByName('replaceById');
+  PicksUser.disableRemoteMethodByName('createChangeStream');
+  PicksUser.disableRemoteMethodByName('find');
+  PicksUser.disableRemoteMethodByName('findOne');
+  PicksUser.disableRemoteMethodByName('deleteById');
+  PicksUser.disableRemoteMethodByName('confirm');
+  PicksUser.disableRemoteMethodByName('count');
+  PicksUser.disableRemoteMethodByName('exists');
+  PicksUser.disableRemoteMethodByName('resetPassword');
+  PicksUser.disableRemoteMethodByName('changePassword');
+  PicksUser.disableRemoteMethodByName('login');
+  PicksUser.disableRemoteMethodByName('prototype.__count__accessTokens');
+  PicksUser.disableRemoteMethodByName('prototype.__create__accessTokens');
+  PicksUser.disableRemoteMethodByName('prototype.__delete__accessTokens');
+  PicksUser.disableRemoteMethodByName('prototype.__destroyById__accessTokens');
+  PicksUser.disableRemoteMethodByName('prototype.__findById__accessTokens');
+  PicksUser.disableRemoteMethodByName('prototype.__get__accessTokens');
+  PicksUser.disableRemoteMethodByName('prototype.__updateById__accessTokens');
+
+  // Helper methods
+
+  /**
+   * Handles a facebook user logging in.
+   * @param {number} facebookId The facebook id of a user to check aganist.
+   * @param {object} facebookResponse A dictionary contain the Facebook
+   *                                  information about the user.
+   * @return {Promise}
+   */
+  function handleFacebookUser(facebookId, facebookResponse) {
+    return new Promise(function(resolve, reject) {
+      let email = facebookResponse['email'];
+      var query = {where: {or: [{facebookId: facebookId}, {email: email}]}};
+      var pictureObject = facebookResponse['picture'];
+      var dataObject = pictureObject['data'];
+      var newUserData = {firstName: facebookResponse['first_name'],
+                         lastName: facebookResponse['last_name'],
+                         avatarUrl: dataObject['url'],
+                         email: facebookResponse['email'],
+                         isFacebookUser: true,
+                         facebookId: facebookId};
+      PicksUser.findOrCreate(query, newUserData)
+      .then(function(result) {
+        // findOrCreate returns an array when using Promises
+        // https://github.com/strongloop/loopback/issues/1959
+        let user = result[0];
+        let created = result[1];
+        if (created) {
+          resolve(user);
+        } else {
+          user.facebookId = facebookId;
+          return user.save();
+        }
+      })
+      .then(function(updatedUser) {
+        resolve(updatedUser);
+      })
+      .catch(function(error) {
+        console.log('Error creating or updating user using Facebook');
+        reject(error);
+      });
+    });
+  };
 
   // Remote Methods
 
@@ -85,7 +129,9 @@ module.exports = function(PicksUser) {
                                   getting the oauth token.
     * @param {Function(Error, string)} callback
     */
-    PicksUser.loginFacebook = function(oauthToken, redirectUrl, callback) {
+    PicksUser.loginFacebook = function(oauthToken,
+                                       redirectUrl,
+                                       callback) {
       var nodeEnvironment = process.env.NODE_ENV;
       var appId = nodeEnvironment == 'production' ?
       process.env.FACEBOOK_APP_ID_PRODUCTION :
@@ -94,12 +140,7 @@ module.exports = function(PicksUser) {
       process.env.FACEBOOK_APP_SECRET_PRODUCTION :
       process.env.FACEBOOK_APP_SECRET_STAGING;
       var Facebook = PicksUser.app.dataSources.Facebook;
-      var Group = PicksUser.app.models.Group;
-      var Score = PicksUser.app.models.Score;
-      var Season = PicksUser.app.models.Season;
-      var isNewUser = false;
-      var globalGroup;
-      let userResponse, accessTokenId, newUser, newScore, facebookAccessToken;
+      let userResponse, facebookAccessToken, facebookId;
       // Exchange oauth token for access token
       Facebook.accessToken(appId, appSecret, redirectUrl, oauthToken)
       .then(function(response) {
@@ -109,94 +150,77 @@ module.exports = function(PicksUser) {
       })
       .then(function(response) {
         // Get the id and use for getting user info
-        var id = response['id'];
-        return Facebook.user(id, facebookAccessToken);
+        facebookId = response['id'];
+        return Facebook.user(facebookId, facebookAccessToken);
       })
       .then(function(response) {
         userResponse = response;
-        var email = userResponse['email'];
-        // Need to check if a user already exists
-        return PicksUser.find({where: {email: email}});
-      })
-      .then(function(results) {
-        if (results.length == 1) {
-          // Check if the user is a Facebook user or not
-          var user = results[0];
-          if (!user.isFacebookUser) {
-            var emailError = new Error();
-            emailError.status = 400;
-            emailError.message = 'email_already_in_use';
-            emailError.code = 'BAD_REQUEST';
-            return Promise.reject(emailError);
-          } else {
-            // The user is just logging in
-            user.firstName = userResponse['first_name'];
-            user.lastName = userResponse['last_name'];
-            var picture = userResponse['picture'];
-            var data = picture['data'];
-            user.avatarUrl = data['url'];
-            user.email = userResponse['email'];
-            user.isFacebookUser = true;
-            return user.save();
-          }
-        } else {
-          // Create new user
-          isNewUser = true;
-          var pictureObject = userResponse['picture'];
-          var dataObject = pictureObject['data'];
-          return PicksUser.create({firstName: userResponse['first_name'],
-                                   lastName: userResponse['last_name'],
-                                   avatarUrl: dataObject['url'],
-                                   email: userResponse['email'],
-                                   isFacebookUser: true});
-        }
+        // Handle if a Facebook user already exists
+        return handleFacebookUser(facebookId, userResponse);
       })
       .then(function(user) {
         // Generate authorization token
-        newUser = user;
         return generateAuthorizationToken(user);
       })
       .then(function(accessToken) {
-        accessTokenId = accessToken.id;
-        if (isNewUser) {
-          // Add user to global group
-          return Group.find({where: {name: 'Global'}});
-        } else {
-          callback(null, {'id': accessTokenId});
-          return Promise.reject(null);
-        }
-      })
-      .then(function(groups) {
-        globalGroup = groups[0];
-        if (globalGroup.participants) {
-          globalGroup.participants.push(newUser.id);
-        } else {
-          globalGroup.participants = [newUser.id];
-        }
-        return globalGroup.save();
-      })
-      .then(function(updatedGroup) {
-        globalGroup = updatedGroup;
-        // Create score for new participant
-        return Score.create({participant: newUser.id,
-                             season: updatedGroup.currentSeason});
-      })
-      .then(function(score) {
-        newScore = score;
-        return Season.findById(globalGroup.currentSeason);
-      })
-      .then(function(season) {
-        season.scores.push(newScore.id);
-        return season.save();
-      })
-      .then(function(updatedSeason) {
-        callback(null, {'id': accessTokenId});
+        callback(null, {'id': accessToken.id});
       })
       .catch(function(error) {
-        if (error) {
-          console.log(error);
-          callback(error, null);
-        }
+        console.log('Error logging user with Facebook');
+        console.log(error);
+        callback(error, null);
       });
     };
+
+    // Operation Hooks
+
+    /**
+     * Operation hook for handling when a new user is created.
+     * @param {string} hookName Name of the operation hook to observe.
+     * @param {Function(object, Function())}
+     */
+    PicksUser.observe('after save', function(ctx, next) {
+      if (ctx.isNewInstance) {
+        let newUser = ctx.instance;
+        if (newUser.email == 'dev@tsl.io') {
+          console.log('Admin user created but global group does not exist');
+          next();
+          return;
+        }
+        var Group = PicksUser.app.models.Group;
+        var Score = PicksUser.app.models.Score;
+        var Season = PicksUser.app.models.Season;
+        let globalGroup, newScore;
+        Group.find({where: {name: 'Global'}})
+        .then(function(groups) {
+          globalGroup = groups[0];
+          globalGroup.participants.push(newUser.id);
+          return globalGroup.save();
+        })
+        .then(function(updatedGroup) {
+          globalGroup = updatedGroup;
+          // Create score for new participant
+          return Score.create({participant: newUser.id,
+                               season: updatedGroup.currentSeason});
+        })
+        .then(function(score) {
+          newScore = score;
+          return Season.findById(globalGroup.currentSeason);
+        })
+        .then(function(season) {
+          season.scores.push(newScore.id);
+          return season.save();
+        })
+        .then(function(updatedSeason) {
+          next();
+        })
+        .catch(function(error) {
+          console.log('Error adding new user to global group');
+          console.log(error);
+          next();
+        });
+      } else {
+        next();
+      }
+    });
 };

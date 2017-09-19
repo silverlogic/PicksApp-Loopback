@@ -1,7 +1,8 @@
 'use strict';
 var Promise = require('bluebird');
 
-module.exports = function(app) {
+module.exports = function(app, cb) {
+  console.log('Starting boot script 3');
   var ScheduleScrapper = app.dataSources.ScheduleScrapper;
   var Nfl = app.models.Nfl;
   let scheduleResults;
@@ -26,8 +27,12 @@ module.exports = function(app) {
   })
   .then(function(updatedNfl) {
     console.log('NFL model updated');
+    console.log('Finished boot script 3');
+    cb();
   })
   .catch(function(error) {
     console.log(error);
+    console.log('Finished boot script 3');
+    cb();
   });
 };

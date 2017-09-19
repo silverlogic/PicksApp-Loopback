@@ -3,22 +3,22 @@ var Promise = require('bluebird');
 
 module.exports = function(Season) {
   // Disable endpoints not needed
-  Season.disableRemoteMethod('create', true);
-  Season.disableRemoteMethod('upsert', true);
-  Season.disableRemoteMethod('upsertWithWhere', true);
-  Season.disableRemoteMethod('updateAll', true);
-  Season.disableRemoteMethod('updateAttributes', false);
-  Season.disableRemoteMethod('updateAttribute', false);
-  Season.disableRemoteMethod('verify', false);
-  Season.disableRemoteMethod('replaceOrCreate', true);
-  Season.disableRemoteMethod('replaceById', true);
-  Season.disableRemoteMethod('createChangeStream', true);
-  Season.disableRemoteMethod('find', true);
-  Season.disableRemoteMethod('findOne', true);
-  Season.disableRemoteMethod('deleteById', true);
-  Season.disableRemoteMethod('confirm', true);
-  Season.disableRemoteMethod('count', true);
-  Season.disableRemoteMethod('exists', true);
+  Season.disableRemoteMethodByName('create');
+  Season.disableRemoteMethodByName('upsert');
+  Season.disableRemoteMethodByName('upsertWithWhere');
+  Season.disableRemoteMethodByName('updateAll');
+  Season.disableRemoteMethodByName('prototype.updateAttributes');
+  Season.disableRemoteMethodByName('prototype.updateAttribute');
+  Season.disableRemoteMethodByName('prototype.verify');
+  Season.disableRemoteMethodByName('replaceOrCreate');
+  Season.disableRemoteMethodByName('replaceById');
+  Season.disableRemoteMethodByName('createChangeStream');
+  Season.disableRemoteMethodByName('find');
+  Season.disableRemoteMethodByName('findOne');
+  Season.disableRemoteMethodByName('deleteById');
+  Season.disableRemoteMethodByName('confirm');
+  Season.disableRemoteMethodByName('count');
+  Season.disableRemoteMethodByName('exists');
 
   // Remote Methods
 

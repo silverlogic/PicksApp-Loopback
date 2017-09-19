@@ -6,6 +6,7 @@ var async = require('async');
 var async2 = require('async');
 
 module.exports = function(app) {
+  console.log('Starting boot script 6');
   console.log('Setting up schedulers');
   var nodeEnvironment = process.env.NODE_ENV;
   var Nfl = app.models.Nfl;
@@ -232,4 +233,5 @@ module.exports = function(app) {
       console.log(error);
     });
   });
+  console.log('Finished boot script 6');
 };
