@@ -2,7 +2,8 @@
 var Promise = require('bluebird');
 var async = require('async');
 
-module.exports = function(app) {
+module.exports = function(app, cb) {
+  console.log('Starting boot script 5');
   let adminUser;
   var globalGroup;
   var Group = app.models.Group;
@@ -76,8 +77,12 @@ module.exports = function(app) {
   })
   .then(function(updatedSeason) {
     console.log('Global group has been created');
+    console.log('Finished boot script 5');
+    cb();
   })
   .catch(function(error) {
     console.log(error);
+    console.log('Finished boot script 5');
+    cb();
   });
 };

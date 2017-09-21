@@ -1,7 +1,8 @@
 'use strict';
 var async = require('async');
 
-module.exports = function(app) {
+module.exports = function(app, cb) {
+  console.log('Starting boot script 2');
   var dataSource = app.dataSources.db;
   var tables = [
     'User',
@@ -96,6 +97,8 @@ module.exports = function(app) {
       for (var i = 0; i < results.length; i++) {
         console.log(results[i]);
       }
+      console.log('Finished boot script 2');
+      cb();
     });
   });
 };

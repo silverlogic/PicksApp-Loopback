@@ -26,7 +26,6 @@
     },
     "email": {
       "type": "string",
-      "required": true,
       "index": {
         "unique": true
       }
@@ -37,6 +36,15 @@
     "isFacebookUser": {
       "type": "boolean",
       "default": false
+    },
+    "facebookId": {
+      "type": "number",
+      "index": {
+        "unique": true
+      },
+      "postgresql": {
+        "dataType": "bigint"
+      }
     }
   },
   "validations": [],

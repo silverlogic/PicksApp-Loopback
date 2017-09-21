@@ -24,21 +24,21 @@ function filterGroupsBySearch(q, groups) {
 
 module.exports = function(Group) {
   // Disable endpoints not needed
-  Group.disableRemoteMethod('upsert', true);
-  Group.disableRemoteMethod('upsertWithWhere', true);
-  Group.disableRemoteMethod('updateAll', true);
-  Group.disableRemoteMethod('updateAttributes', false);
-  Group.disableRemoteMethod('updateAttribute', false);
-  Group.disableRemoteMethod('verify', false);
-  Group.disableRemoteMethod('replaceOrCreate', true);
-  Group.disableRemoteMethod('replaceById', true);
-  Group.disableRemoteMethod('createChangeStream', true);
-  Group.disableRemoteMethod('find', true);
-  Group.disableRemoteMethod('findOne', true);
-  Group.disableRemoteMethod('deleteById', true);
-  Group.disableRemoteMethod('confirm', true);
-  Group.disableRemoteMethod('count', true);
-  Group.disableRemoteMethod('exists', true);
+  Group.disableRemoteMethodByName('upsert');
+  Group.disableRemoteMethodByName('upsertWithWhere');
+  Group.disableRemoteMethodByName('updateAll');
+  Group.disableRemoteMethodByName('prototype.updateAttributes');
+  Group.disableRemoteMethodByName('prototype.updateAttribute');
+  Group.disableRemoteMethodByName('prototype.verify');
+  Group.disableRemoteMethodByName('replaceOrCreate');
+  Group.disableRemoteMethodByName('replaceById');
+  Group.disableRemoteMethodByName('createChangeStream');
+  Group.disableRemoteMethodByName('find');
+  Group.disableRemoteMethodByName('findOne');
+  Group.disableRemoteMethodByName('deleteById');
+  Group.disableRemoteMethodByName('confirm');
+  Group.disableRemoteMethodByName('count');
+  Group.disableRemoteMethodByName('exists');
 
   // Remote Methods
 
@@ -327,6 +327,7 @@ module.exports = function(Group) {
         newSeason = updatedSeason;
         // Update created group
         group.currentSeason = newSeason.id;
+        group.participants = [];
         return group.save();
       })
       .then(function(updatedGroup) {
