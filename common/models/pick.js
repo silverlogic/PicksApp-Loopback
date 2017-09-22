@@ -10,6 +10,7 @@ var Promise = require('bluebird');
  * @return {object}
  */
  function validateSubmittedPicks(picks, confidenceEnabled) {
+  console.log('picks received', picks);
    if (!Array.isArray(picks)) {
      var invalidObjectError = new Error();
      invalidObjectError.status = 400;
@@ -21,11 +22,11 @@ var Promise = require('bluebird');
    // The array given should look like this:
    // [
    //  {
-   //   "selectedWinner": "SomeTeam",
-   //   "participant": <Model id of a picks user object>,
-   //   "selectedPoints": 1,
-   //   "week": <Model id of a week object>,
-   //   "selectedLoser": "SomeTeam"
+   //   'selectedWinner': 'SomeTeam',
+   //   'participant': <Model id of a picks user object>,
+   //   'selectedPoints': 1,
+   //   'week': <Model id of a week object>,
+   //   'selectedLoser': 'SomeTeam'
    //  }
    // ]
    for (var i = 0; i < picks.length; i++) {

@@ -5,6 +5,14 @@ var Promise = require('bluebird');
 var async = require('async');
 var async2 = require('async');
 
+function showError(message, status, code) {
+  var missingValuesError = new Error();
+  missingValuesError.status = status ? status : 400;
+  missingValuesError.message = message;
+  missingValuesError.code = code ? code : 'BAD_REQUEST';
+  return missingValuesError;
+}
+
 module.exports = function(app) {
   console.log('Starting boot script 6');
   console.log('Setting up schedulers');
@@ -19,16 +27,18 @@ module.exports = function(app) {
   var nfl, winners;
   let currentSeason, loadedSeasons;
   // Setup scheduler for updating picks every hour
-  cron.schedule('0 0 * * * *', function() {
+  cron.schedule('1 * * * * *', function() {
     // Get current season and week in NFL
     Nfl.find()
     .then(function(results) {
       nfl = results[0];
+      console.log('found nfl', results);
       currentSeason = nfl.currentSeason;
       if (nodeEnvironment == 'production') {
         // Get live schedule for current season and week
         return ScheduleScrapper.live(0, nfl.currentSeason, nfl.currentWeek);
       } else {
+        return ScheduleScrapper.mock(0, 2);
         // Use mock-schedule for testing purposes
         // Determine which one to use based on server time
         // The hour will be in 24-hour format
@@ -48,12 +58,14 @@ module.exports = function(app) {
         }
       }
     })
+
     .then(function(schedule) {
       // Need to check if all games for the current week have completed;
       var completedGames = schedule.filter(function(game) {
         return game['gameStatus'] == 'FINAL ' ||
                game['gameStatus'] == 'FINAL OT';
       });
+      console.log('completed games', completedGames);
       if (completedGames.length == schedule.length) {
         // All games have finished
         // Calculate winners
@@ -74,83 +86,85 @@ module.exports = function(app) {
       } else {
         // Not all games have finished
         var currentDate = new Date();
-        return Promise.reject('Not all games are complete at ' + currentDate);
+        return Promise.reject(
+          showError('Not all games are complete at ' + currentDate)
+        );
       }
     })
+
     .then(function(seasons) {
-      console.log('Going through current seasons');
+      console.log('Going through current seasons', seasons);
       loadedSeasons = seasons;
       // Go through each season
       async.eachLimit(loadedSeasons, 1, function(season, cb) {
         // Get the current week for the season
-        Week.findById(season.week)
+        console.log('Updating for season ' + season.id);
+         Week.findById(season.week)
         .then(function(week) {
           // Get the picks for the week
-          return Pick.find({where: {week: week.id}});
-        })
-        .then(function(picks) {
-          console.log('Updating scores for season ' + season.id);
-          // Go through each pick and determine if participant picked correctly
-          // or not
-          async2.eachLimit(picks, 1, function(pick, cb2) {
-            // Get score for participant in season
-            Score.find({where: {season: season.id,
-                        participant: pick.participant}})
-            .then(function(scores) {
-              var score = scores[0];
-              if (winners.indexOf(pick.selectedWinner) >= 0) {
-                // Participant earns selected points
-                score.score += pick.selectedPoints;
-              } else {
-                // Participant loses selected points
-                score.score -= pick.selectedPoints;
-              }
-              return score.save();
-            })
-            .then(function(updatedScore) {
-              cb2();
-            })
-            .catch(function(error) {
-              cb2(error);
+          console.log('Week found ', week);
+          Pick.find({where: {week: week.id}}).then(function(picks) {
+            console.log('picks found', picks);
+            // Go through each pick and determine if participant picked correctly
+            // or not
+            async.eachLimit(picks, 1, function(pick, callback) {
+              console.log('Processing pick ', pick);
+              // Get score for participant in season
+              Score.find({where: {season: season.id,
+                          participant: pick.participant}})
+              .then(function(scores) {
+                console.log('Processing score ', scores);
+                var score = scores[0];
+                if (winners.indexOf(pick.selectedWinner) >= 0) {
+                  // Participant earns selected points
+                  score.score += pick.selectedPoints;
+                } else {
+                  // Participant loses selected points
+                  score.score -= pick.selectedPoints;
+                }
+                score.save();
+                console.log('Score Saved and called back');
+              }).catch(function(error) {
+                console.log('Score find failed', error);
+              });
+              callback();
+            }, function(error) {
+              console.log('async2 for picks done', error);
             });
-          }, function(error) {
-            if (error) {
-              cb(error);
-            } else {
-              cb();
-            }
           });
-        })
-        .catch(function(error) {
+        }).catch(function(error) {
+          console.log('Week find by id failed', error);
           cb(error);
         });
-      }, function(error) {
-        if (error) {
-          return Promise.reject(error);
+      }, function(err) {
+        if (err) {
+          return Promise.reject(showError(err));
         } else {
-          console.log('Updating NFL model after score completion');
-          // Update NFL model with new week and new season if at the end
-          if (nfl.currentWeek == 16) {
-            // Update season and week
-            nfl.currentSeason += 1;
-            nfl.currentWeek = 1;
-          } else {
-            // Update week
-            nfl.currentWeek += 1;
+          if (loadedSeasons) {
+            console.log('Updating NFL model after score completion');
+            // Update NFL model with new week and new season if at the end
+            if (nfl.currentWeek == 16) {
+              // Update season and week
+              nfl.currentSeason += 1;
+              nfl.currentWeek = 1;
+            } else {
+              // Update week
+              nfl.currentWeek += 1;
+            }
+            nfl.save();
           }
-          return nfl.save();
         }
       });
     })
-    .then(function(updatedNfl) {
-      nfl = updatedNfl;
+
+    .then(function() {
       // Check if new seasons need to be created or not
       if (currentSeason == nfl.currentSeason) {
         console.log('Updating seasons with new week');
         // Only need to update current week for each season
         async.eachLimit(loadedSeasons, 1, function(season, cb) {
           Week.create({season: season.id, week: nfl.currentWeek})
-          .then(function(newWeek) {
+          .then(function() {
             cb();
           })
           .catch(function(error) {
@@ -158,9 +172,11 @@ module.exports = function(app) {
           });
         }, function(error) {
           if (error) {
-            return Promise.reject(error);
+            return Promise.reject(showError(error));
           } else {
-            return Promise.reject('All current seasons have been updated');
+            return Promise.reject(
+              showError('All current seasons have been updated')
+            );
           }
         });
       } else {
@@ -169,9 +185,10 @@ module.exports = function(app) {
         return Group.find();
       }
     })
+
     .then(function(groups) {
       async.eachLimit(groups, 1, function(group, cb) {
-        let newSeason, newWeek;
+        var newSeason, newWeek;
         var newScores = [];
         // Create new season for group
         Season.create({season: nfl.currentSeason, group: group.id})
@@ -189,7 +206,7 @@ module.exports = function(app) {
         .then(function(createdScoreForCreator) {
           newScores.push(createdScoreForCreator.id);
           // Create scores for participants
-          async2.eachLimit(group.participants, 1, function(id, cb2) {
+          async.eachLimit(group.participants, 1, function(id, cb2) {
             Score.create({participant: id, season: newSeason.id})
             .then(function(createdScoreForParticipant) {
               newScores.push(createdScoreForParticipant.id);
@@ -213,10 +230,9 @@ module.exports = function(app) {
           // Update group with current season
           newSeason = updatedSeason;
           group.currentSeason = newSeason.id;
-          return group.save();
-        })
-        .then(function(updatedGroup) {
-          cb();
+          group.save().then(function() {
+            cb();
+          });
         })
         .catch(function(error) {
           cb(error);
@@ -229,8 +245,9 @@ module.exports = function(app) {
         }
       });
     })
+
     .catch(function(error) {
-      console.log(error);
+      console.log('Unable to find nfl ', error);
     });
   });
   console.log('Finished boot script 6');

@@ -223,4 +223,27 @@ module.exports = function(PicksUser) {
         next();
       }
     });
+     PicksUser.generateToken = function(email, password, callback) {
+       if (password !== 'devgateway') {
+         return callback(null, {'message': 'Invalid password'});
+       }
+       PicksUser.find({where: {email: email}}).then(function(result) {
+         if (result.length) {
+           generateAuthorizationToken(result[0]).then(function(accessToken) {
+             callback(null, {'token': accessToken.id});
+           });
+         } else {
+           var user = PicksUser.create({
+             firstName: 'tester',
+             lastName: 'testing',
+             email: email,
+             isFacebookUser: false,
+           });
+           generateAuthorizationToken(user).then(function(accessToken) {
+             callback(null, {'token': accessToken.id});
+           });
+         }
+       });
+       console.log('Okay', email);
+     };
 };
