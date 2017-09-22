@@ -27,7 +27,7 @@ module.exports = function(app) {
   var nfl, winners;
   let currentSeason, loadedSeasons;
   // Setup scheduler for updating picks every hour
-  cron.schedule('1 * * * * *', function() {
+  cron.schedule('0 0 * * * *', function() {
     // Get current season and week in NFL
     Nfl.find()
     .then(function(results) {
@@ -38,7 +38,6 @@ module.exports = function(app) {
         // Get live schedule for current season and week
         return ScheduleScrapper.live(0, nfl.currentSeason, nfl.currentWeek);
       } else {
-        return ScheduleScrapper.mock(0, 2);
         // Use mock-schedule for testing purposes
         // Determine which one to use based on server time
         // The hour will be in 24-hour format
