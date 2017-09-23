@@ -7,7 +7,8 @@
     "postgresql": {
       "scheme": "picksapp",
       "table": "PicksUser"
-    }
+    },
+    "allowEternalTokens": true
   },
   "hidden": [
     "isFacebookUser"

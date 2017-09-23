@@ -28,7 +28,7 @@
     "relations": {
       "user": {
         "type": "belongsTo",
-        "model": "User",
+        "model": "PicksUser",
         "foreignKey": "userId"
       }
     },

@@ -95,7 +95,7 @@ module.exports = function(Pick) {
     var Week = Pick.app.models.Week;
     var Group = Pick.app.models.Group;
     var createdPicks = [];
-    let confidenceEnabled;
+    let confidenceEnabled, weekInstance;
     // Get the group that the picks are for.
     Group.findById(group)
     .then(function(groupInstance) {
@@ -105,40 +105,53 @@ module.exports = function(Pick) {
     })
     .then(function(exists) {
       if (exists) {
-        // Check that the picks sent is valid
-        var validationError = validateSubmittedPicks(picks, confidenceEnabled);
-        if (validationError) {
-          return Promise.reject(validationError);
-        } else {
-          // Create picks for participant
-          async.eachLimit(picks, 1, function(pickDictionary, cb) {
-            Pick.upsert({id: pickDictionary['id'],
-                         selectedWinner: pickDictionary['selectedWinner'],
-                         participant: pickDictionary['participant'],
-                         selectedPoints: pickDictionary['selectedPoints'],
-                         week: pickDictionary['week'],
-                         selectedLoser: pickDictionary['selectedLoser']})
-            .then(function(pick) {
-              createdPicks.push(pick);
-              cb();
-            })
-            .catch(function(error) {
-              cb(error);
-            });
-          }, function(error) {
-            if (error) {
-              return Promise.reject(error);
-            } else {
-              callback(null, createdPicks);
-            }
-          });
-        }
+        return Week.findById(week);
       } else {
         var weekDoesNotExistError = new Error();
         weekDoesNotExistError.status = 404;
         weekDoesNotExistError.message = 'Week given does not exist';
         weekDoesNotExistError.code = 'NOT_FOUND';
         return Promise.reject(weekDoesNotExistError);
+      }
+    })
+    .then(function(retrievedWeek) {
+      weekInstance = retrievedWeek;
+      // Check that the picks sent is valid
+      var validationError = validateSubmittedPicks(picks, confidenceEnabled);
+      if (validationError) {
+        return Promise.reject(validationError);
+      } else {
+        // Create picks for participant
+        async.eachLimit(picks, 1, function(pickDictionary, cb) {
+          Pick.upsert({id: pickDictionary['id'],
+                       selectedWinner: pickDictionary['selectedWinner'],
+                       participant: pickDictionary['participant'],
+                       selectedPoints: pickDictionary['selectedPoints'],
+                       week: pickDictionary['week'],
+                       selectedLoser: pickDictionary['selectedLoser']})
+          .then(function(pick) {
+            createdPicks.push(pick);
+            if (weekInstance.picks) {
+              weekInstance.picks.push(pick.id);
+            } else {
+              weekInstance.picks = [pick.id];
+            }
+            return weekInstance.save();
+          })
+          .then(function(updatedWeek) {
+            weekInstance = updatedWeek;
+            cb();
+          })
+          .catch(function(error) {
+            cb(error);
+          });
+        }, function(error) {
+          if (error) {
+            return Promise.reject(error);
+          } else {
+            callback(null, createdPicks);
+          }
+        });
       }
     })
     .catch(function(error) {
