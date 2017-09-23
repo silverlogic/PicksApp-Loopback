@@ -51,6 +51,13 @@ module.exports = function(PicksUser) {
   PicksUser.disableRemoteMethodByName('prototype.__findById__accessTokens');
   PicksUser.disableRemoteMethodByName('prototype.__get__accessTokens');
   PicksUser.disableRemoteMethodByName('prototype.__updateById__accessTokens');
+  var nodeEnvironment = process.env.NODE_ENV;
+  if (nodeEnvironment == 'production') {
+    PicksUser.disableRemoteMethodByName('generateToken');
+    console.log('Manually token generation disabled');
+  } else {
+    console.log('Manually token generation enabled');
+  }
 
   // Helper methods
 
@@ -172,6 +179,38 @@ module.exports = function(PicksUser) {
       });
     };
 
+    /**
+     * Generate a user token.
+     * @param {string} email email of the user
+     * @param {string} password authorized password of using this endpoint
+     * @param {Function(Error, object)} callback
+     */
+    PicksUser.generateToken = function(email, password, callback) {
+      if (password !== 'devgateway') {
+        callback(null, {'message': 'Invalid password'});
+        return;
+      }
+      var userData = {
+        firstName: 'tester',
+        lastName: 'testing',
+        email: email,
+        isFacebookUser: false,
+      };
+      PicksUser.findOrCreate({where: {email: email}}, userData)
+      .then(function(result) {
+        var instance = result[0];
+        return generateAuthorizationToken(instance);
+      })
+      .then(function(accessToken) {
+        callback(null, {'token': accessToken.id});
+      })
+      .catch(function(error) {
+        console.log('Error creating test user');
+        console.log(error);
+        callback(error, null);
+      });
+    };
+
     // Operation Hooks
 
     /**
@@ -223,27 +262,4 @@ module.exports = function(PicksUser) {
         next();
       }
     });
-     PicksUser.generateToken = function(email, password, callback) {
-       if (password !== 'devgateway') {
-         return callback(null, {'message': 'Invalid password'});
-       }
-       PicksUser.find({where: {email: email}}).then(function(result) {
-         if (result.length) {
-           generateAuthorizationToken(result[0]).then(function(accessToken) {
-             callback(null, {'token': accessToken.id});
-           });
-         } else {
-           var user = PicksUser.create({
-             firstName: 'tester',
-             lastName: 'testing',
-             email: email,
-             isFacebookUser: false,
-           });
-           generateAuthorizationToken(user).then(function(accessToken) {
-             callback(null, {'token': accessToken.id});
-           });
-         }
-       });
-       console.log('Okay', email);
-     };
 };

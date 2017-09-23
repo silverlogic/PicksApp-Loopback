@@ -13,7 +13,8 @@
     "picks": {
       "type": [
         "number"
-      ]
+      ],
+      "default": []
     },
     "season": {
       "type": "number",

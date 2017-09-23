@@ -309,7 +309,9 @@ module.exports = function(Group) {
       .then(function(season) {
         newSeason = season;
         // Create week for season
-        return Week.create({season: newSeason.id, week: nfl.currentWeek});
+        return Week.create({season: newSeason.id,
+                            week: nfl.currentWeek,
+                            picks: []});
       })
       .then(function(week) {
         newWeek = week;
