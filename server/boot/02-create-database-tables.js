@@ -17,6 +17,7 @@ module.exports = function(app, cb) {
     'Week',
     'Pick',
     'Nfl',
+    'Weather',
   ];
   console.log('Performing table creation/update');
   dataSource.autoupdate(tables, function(error, result) {

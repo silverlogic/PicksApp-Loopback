@@ -25,7 +25,8 @@
     "moment": "^2.18.1",
     "node-cron": "^1.2.1",
     "serve-favicon": "^2.4.4",
-    "strong-error-handler": "^2.2.0"
+    "strong-error-handler": "^2.2.0",
+    "superagent": "^3.6.0"
   },
   "devDependencies": {
     "eslint": "^3.17.1",

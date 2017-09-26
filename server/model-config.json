@@ -101,5 +101,9 @@
   "Nfl": {
     "dataSource": "db",
     "public": false
+  },
+  "Weather": {
+    "dataSource": "db",
+    "public": false
   }
 }
