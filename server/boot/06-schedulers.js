@@ -64,7 +64,6 @@ module.exports = function(app) {
         return game['gameStatus'] == 'FINAL ' ||
                game['gameStatus'] == 'FINAL OT';
       });
-      console.log('completed games', completedGames);
       if (completedGames.length == schedule.length) {
         // All games have finished
         // Calculate winners
