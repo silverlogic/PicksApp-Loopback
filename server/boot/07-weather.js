@@ -170,7 +170,7 @@ module.exports = function(app) {
   var Weather = app.models.Weather;
   var apiKey = process.env.WEATHER_API_KEY;
   console.log('api key ', apiKey);
-
+  Weather.destroyAll();
   cron.schedule('0 0 * * * *', function() {
     // Get current season and week in NFL
     console.log('Fetching weather data');
@@ -194,9 +194,7 @@ module.exports = function(app) {
               weather.condition = condition;
               weather.save();
             } else {
-              Weather.create({where: {
-                team: team.name, createdDate: todayDate,
-              }}, {
+              Weather.create({
                 team: team.name, location: team.location, dome: team.dome,
                 condition: condition, lastModified: new Date(),
                 createdDate: todayDate,

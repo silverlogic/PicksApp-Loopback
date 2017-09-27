@@ -25,6 +25,12 @@
     "condition": {
       "type": "object",
       "required": true
+    },
+    "createdDate": {
+      "type": "string"
+    },
+    "lastModified": {
+      "type": "date"
     }
   },
   "validations": [],
