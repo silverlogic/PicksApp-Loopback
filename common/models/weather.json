@@ -1,0 +1,40 @@
+{
+  "name": "Weather",
+  "plural": "weather",
+  "base": "PersistedModel",
+  "idInjection": true,
+  "options": {
+    "validateUpsert": true,
+    "postgresql": {
+      "scheme": "picksapp",
+      "table": "weather"
+    }
+  },
+  "properties": {
+    "team": {
+      "type": "string",
+      "required": true
+    },
+     "location": {
+      "type": "object",
+      "required": false
+    },
+    "dome": {
+      "type": "boolean"
+    },
+    "condition": {
+      "type": "object",
+      "required": true
+    },
+    "createdDate": {
+      "type": "string"
+    },
+    "lastModified": {
+      "type": "date"
+    }
+  },
+  "validations": [],
+  "relations": {},
+  "acls": [],
+  "methods": {}
+}

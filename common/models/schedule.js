@@ -1,6 +1,42 @@
 'use strict';
 var Promise = require('bluebird');
 
+function getWeather(Weather, result) {
+  var weatherResults = [];
+  return new Promise(function(resolve, reject) {
+    var lastIndex = result.length - 1;
+    var lastTeamName = result[lastIndex]['homeTeam'] ?
+      result[lastIndex]['homeTeam']['teamName'] :
+      result[lastIndex]['homeTeamName'];
+
+    result.forEach(function(res) {
+      var teamName = res['homeTeam'] ?
+        res['homeTeam']['teamName'] : res['homeTeamName'];
+      console.log('team search', teamName);
+      Weather.find({where: {team: teamName}}).then(function(weather) {
+        var total = weather.length;
+        console.log('found weather', total);
+        if (weather.length) {
+          res['weather'] = weather[total - 1];
+          weatherResults.push(res);
+        } else {
+          res['weather'] = {};
+          weatherResults.push(res);
+        }
+        if (teamName == lastTeamName) {
+          resolve(weatherResults);
+        }
+      }).catch(function(error) {
+        console.log('No weather found ', error);
+        weatherResults.push(res);
+        if (teamName == lastTeamName) {
+          resolve(weatherResults);
+        }
+      });
+    });
+  });
+}
+
 module.exports = function(Schedule) {
   // Remote Methods
 
@@ -14,9 +50,14 @@ module.exports = function(Schedule) {
   */
   Schedule.historical = function(leagueType, season, week, callback) {
     var ScheduleScrapper = Schedule.app.dataSources.ScheduleScrapper;
+    var Weather = Schedule.app.models.Weather;
+
     ScheduleScrapper.historical(leagueType, season, week)
     .then(function(result) {
-      callback(null, result);
+      var promise = getWeather(Weather, result);
+      promise.then(function(result) {
+        callback(null, result);
+      });
     })
     .catch(function(error) {
       console.log('Error retrieving schedule');
@@ -34,9 +75,13 @@ module.exports = function(Schedule) {
   */
   Schedule.live = function(leagueType, season, week, callback) {
     var ScheduleScrapper = Schedule.app.dataSources.ScheduleScrapper;
+    var Weather = Schedule.app.models.Weather;
     ScheduleScrapper.live(leagueType, season, week)
     .then(function(result) {
-      callback(null, result);
+      var promise = getWeather(Weather, result);
+      promise.then(function(result) {
+        callback(null, result);
+      });
     })
     .catch(function(error) {
       console.log('Error getting live schedule');
@@ -54,9 +99,13 @@ module.exports = function(Schedule) {
   */
   Schedule.mock = function(leagueType, timePeriod, callback) {
     var ScheduleScrapper = Schedule.app.dataSources.ScheduleScrapper;
+    var Weather = Schedule.app.models.Weather;
     ScheduleScrapper.mock(leagueType, timePeriod)
     .then(function(result) {
-      callback(null, result);
+      var promise = getWeather(Weather, result);
+      promise.then(function(result) {
+        callback(null, result);
+      });
     })
     .catch(function(error) {
       console.log('Error getting mock schedule');
@@ -71,9 +120,13 @@ module.exports = function(Schedule) {
   */
   Schedule.current = function(leagueType, callback) {
     var ScheduleScrapper = Schedule.app.dataSources.ScheduleScrapper;
+    var Weather = Schedule.app.models.Weather;
     ScheduleScrapper.current(leagueType)
     .then(function(result) {
-      callback(null, result);
+      var promise = getWeather(Weather, result);
+      promise.then(function(result) {
+        callback(null, result);
+      });
     })
     .catch(function(error) {
       console.log('Error getting current season and week number');
