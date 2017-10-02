@@ -120,13 +120,9 @@ module.exports = function(Schedule) {
   */
   Schedule.current = function(leagueType, callback) {
     var ScheduleScrapper = Schedule.app.dataSources.ScheduleScrapper;
-    var Weather = Schedule.app.models.Weather;
     ScheduleScrapper.current(leagueType)
     .then(function(result) {
-      var promise = getWeather(Weather, result);
-      promise.then(function(result) {
-        callback(null, result);
-      });
+      callback(null, result);
     })
     .catch(function(error) {
       console.log('Error getting current season and week number');
