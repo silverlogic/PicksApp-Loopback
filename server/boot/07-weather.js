@@ -169,9 +169,8 @@ module.exports = function(app) {
   console.log('Starting boot script 7');
   var Weather = app.models.Weather;
   var apiKey = process.env.WEATHER_API_KEY;
-  console.log('api key ', apiKey);
   Weather.destroyAll();
-  cron.schedule('1 * * * * *', function() {
+  cron.schedule('0 0 * * * *', function() {
     // Get current season and week in NFL
     console.log('Fetching weather data');
     teamMap.forEach(function(team) {
@@ -179,37 +178,34 @@ module.exports = function(app) {
       request.get('http://api.openweathermap.org/data/2.5/weather')
       .query({lat: team.location.lat, lon: team.location.lon, appid: apiKey}) // query string
       .end(function(err, res) {
+        if (!res) {
+          console.log('No response from weather api');
+          return;
+        }
         var condition = {
           id: res.body.weather[0].id,
           temp: res.body.main.temp ? res.body.main.temp - 273.15 : 0,
           name: res.body.name,
           description: res.body.weather[0].description,
-          icon: res.body.weather[0].icon
+          icon: res.body.weather[0].icon,
+          iconUrl: 'http://openweathermap.org/img/w/' + res.body.weather[0].icon + '.png',
         };
         console.log('weather response for ', team.name);
         var todayDate = new Date().toJSON().slice(0, 10).replace(/-/g, '-');
 
-        Weather.findOne({where: {team: team.name, createdDate: todayDate}})
-          .then(function(weather) {
-            if (weather) {
-              console.log('weather found');
-              weather.condition = condition;
-              weather.save();
-            } else {
-              Weather.create({
-                team: team.name, location: team.location, dome: team.dome,
-                condition: condition, lastModified: new Date(),
-                createdDate: todayDate,
-              })
-              .then(function(weather) {
-                console.log('added weather details successfully');
-              })
-              .catch(function(error) {
-                console.log('Error creating weather', error);
-              });
-            }
-        }).catch(function(error) {
-          console.log('Error finding weather', error);
+        Weather.upsertWithWhere(
+          {team: team.name, createdDate: todayDate},
+          {
+            team: team.name, location: team.location, dome: team.dome,
+            condition: condition, lastModified: new Date(),
+            createdDate: todayDate,
+          }
+        )
+        .then(function(weather) {
+          console.log('added weather details successfully');
+        })
+        .catch(function(error) {
+          console.log('Error creating weather', error);
         });
       });
     });
