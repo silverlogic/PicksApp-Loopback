@@ -171,7 +171,7 @@ module.exports = function(app) {
   var apiKey = process.env.WEATHER_API_KEY;
   console.log('api key ', apiKey);
   Weather.destroyAll();
-  cron.schedule('0 0 * * * *', function() {
+  cron.schedule('1 * * * * *', function() {
     // Get current season and week in NFL
     console.log('Fetching weather data');
     teamMap.forEach(function(team) {
@@ -180,9 +180,11 @@ module.exports = function(app) {
       .query({lat: team.location.lat, lon: team.location.lon, appid: apiKey}) // query string
       .end(function(err, res) {
         var condition = {
-          temp: res.body.main.temp - 273.15,
+          id: res.body.weather[0].id,
+          temp: res.body.main.temp ? res.body.main.temp - 273.15 : 0,
           name: res.body.name,
           description: res.body.weather[0].description,
+          icon: res.body.weather[0].icon
         };
         console.log('weather response for ', team.name);
         var todayDate = new Date().toJSON().slice(0, 10).replace(/-/g, '-');
