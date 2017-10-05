@@ -25,6 +25,14 @@
       "required": true
     }
   },
+  "indexes": {
+    "week_season_index": {
+      "keys": {"season": 1, "week": -1},
+      "options": {
+         "unique": true
+       }
+    }
+  },
   "validations": [],
   "relations": {},
   "acls": [

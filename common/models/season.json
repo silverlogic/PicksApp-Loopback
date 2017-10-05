@@ -42,6 +42,14 @@
       "permission": "ALLOW"
     }
   ],
+  "indexes": {
+    "season_group_index": {
+      "keys": {"season": 1, "group": -1},
+      "options": {
+         "unique": true
+       }
+    }
+  },
   "methods": {
     "prototype.scoresForSeason": {
       "accepts": [
