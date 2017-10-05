@@ -169,7 +169,6 @@ module.exports = function(app) {
   console.log('Starting boot script 7');
   var Weather = app.models.Weather;
   var apiKey = process.env.WEATHER_API_KEY;
-  Weather.destroyAll();
   cron.schedule('0 0 * * * *', function() {
     // Get current season and week in NFL
     console.log('Fetching weather data');

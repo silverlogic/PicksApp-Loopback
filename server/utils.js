@@ -9,20 +9,20 @@ module.exports = {
     return new Promise(function(resolve, reject) {
       var options = {
           host: host,
-          path: path
+          path: path,
       };
-      var request = http.request(options, function (res) {
+      var request = http.request(options, function(res) {
           var data = '';
-          res.on('data', function (chunk) {
+          res.on('data', function(chunk) {
               data += chunk;
           });
-          res.on('end', function () {
+          res.on('end', function() {
             var $ = cheerio.load(data);
             jsonframe($);
-            resolve($('body').scrape(frame))
+            resolve($('body').scrape(frame));
           });
       });
-      request.on('error', function (e) {
+      request.on('error', function(e) {
           reject(e.message);
       });
       request.end();
@@ -189,5 +189,5 @@ module.exports = {
     'location': {'lat': 44.501253, 'lon': -88.061656},
     'dome': false,
   },
-]
+],
 };
