@@ -1,36 +1,6 @@
 'use strict';
 var Promise = require('bluebird');
-
-function getWeather(Weather, result) {
-  var weatherResults = [];
-  return new Promise(function(resolve, reject) {
-    var lastIndex = result.length - 1;
-    var lastTeamName = result[lastIndex]['homeTeamName'];
-
-    result.forEach(function(res) {
-      var teamName = res['homeTeamName'];
-      console.log('team search', teamName);
-      Weather.find({where: {team: teamName}}).then(function(weather) {
-        var total = weather.length;
-        console.log('found weather', total);
-        if (weather.length) {
-          res.weather = weather[total - 1];
-          res.save();
-          weatherResults.push(res);
-        }
-        if (teamName == lastTeamName) {
-          resolve(weatherResults);
-        }
-      }).catch(function(error) {
-        console.log('No weather found ', error);
-        weatherResults.push(res);
-        if (teamName == lastTeamName) {
-          resolve(weatherResults);
-        }
-      });
-    });
-  });
-}
+var utils = require('../../server/utils');
 
 function getMockedWeather(Weather, result) {
   var weatherResults = [];
@@ -70,7 +40,22 @@ function getMockedWeather(Weather, result) {
 
 module.exports = function(Schedule) {
   // Remote Methods
-
+  Schedule.disableRemoteMethodByName('create');
+  Schedule.disableRemoteMethodByName('upsert');
+  Schedule.disableRemoteMethodByName('upsertWithWhere');
+  Schedule.disableRemoteMethodByName('updateAll');
+  Schedule.disableRemoteMethodByName('prototype.updateAttributes');
+  Schedule.disableRemoteMethodByName('prototype.updateAttribute');
+  Schedule.disableRemoteMethodByName('prototype.verify');
+  Schedule.disableRemoteMethodByName('replaceOrCreate');
+  Schedule.disableRemoteMethodByName('replaceById');
+  Schedule.disableRemoteMethodByName('createChangeStream');
+  Schedule.disableRemoteMethodByName('find');
+  Schedule.disableRemoteMethodByName('findOne');
+  Schedule.disableRemoteMethodByName('deleteById');
+  Schedule.disableRemoteMethodByName('confirm');
+  Schedule.disableRemoteMethodByName('count');
+  Schedule.disableRemoteMethodByName('exists');
   /**
   * Finds historical score data based on a given season and week.
   * @param {number} leagueType The sports league to get a schedule from. For
@@ -79,8 +64,8 @@ module.exports = function(Schedule) {
   * @param {number} week The week in the given season.
   * @param {Function(Error, array)} callback
   */
-  Schedule.historical = function(leagueType, season, week, callback) {
-    Schedule.find({where:{season: season, week: week}})
+  Schedule.historical = function(season, week, callback) {
+    Schedule.find({where: {season: season, week: week}})
     .then(function(results) {
       callback(null, results);
     })
@@ -122,20 +107,8 @@ module.exports = function(Schedule) {
                                documentation for more info.
   * @param {Function(Error, array)} callback
   */
-  Schedule.mock = function(leagueType, timePeriod, callback) {
-    var ScheduleScrapper = Schedule.app.dataSources.ScheduleScrapper;
-    var Weather = Schedule.app.models.Weather;
-    ScheduleScrapper.mock(leagueType, timePeriod)
-    .then(function(result) {
-      var promise = getMockedWeather(Weather, result);
-      promise.then(function(result) {
-        callback(null, result);
-      });
-    })
-    .catch(function(error) {
-      console.log('Error getting mock schedule');
-      callback(error, null);
-    });
+  Schedule.mock = function(callback) {
+    callback(null, utils.mockedData);
   };
 
   /**
