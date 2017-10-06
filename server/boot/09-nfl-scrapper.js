@@ -118,7 +118,7 @@ module.exports = function(app) {
               season: year, week: week,
               homeTeamName: schedule['homeTeam']['teamName'],
             }, {
-            year: year, week: week, gameStatus: schedule['gameStatus'],
+            season: year, week: week, gameStatus: schedule['gameStatus'],
             homeTeamName: schedule['homeTeam']['teamName'],
             homeTeam: schedule['homeTeam'],
             awayTeam: schedule['awayTeam'],
