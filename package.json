@@ -17,6 +17,7 @@
     "cors": "^2.8.4",
     "dotenv": "^4.0.0",
     "helmet": "^3.8.2",
+    "jsonframe-cheerio": "^3.0.1",
     "loopback": "^3.14.0",
     "loopback-boot": "^3.0.1",
     "loopback-component-explorer": "^5.1.0",
@@ -24,6 +25,7 @@
     "loopback-connector-rest": "^3.0.0",
     "moment": "^2.18.1",
     "node-cron": "^1.2.1",
+    "scraperjs": "^1.2.0",
     "serve-favicon": "^2.4.5",
     "strong-error-handler": "^2.2.0",
     "superagent": "^3.6.2"

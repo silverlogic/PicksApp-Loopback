@@ -1,11 +1,51 @@
 {
   "name": "Schedule",
-  "base": "Model",
+  "plural": "Schedules",
+  "base": "PersistedModel",
   "idInjection": true,
   "options": {
-    "validateUpsert": true
+    "validateUpsert": true,
+    "postgresql": {
+      "scheme": "picksapp",
+      "table": "schedule"
+    }
   },
-  "properties": {},
+  "properties": {
+    "date": {
+      "type": "string"
+    },
+    "type": {
+      "type": "integer"
+    },
+    "gameStatus": {
+      "type": "string",
+      "required": false
+    },
+    "season": {
+      "type": "string",
+      "required": false
+    },
+    "week": {
+      "type": "string",
+      "required": true
+    },
+    "homeTeamName": {
+      "type": "string",
+      "required": true
+    },
+    "homeTeam": {
+      "type": "object",
+      "required": true
+    },
+    "awayTeam": {
+      "type": "object",
+      "required": true
+    },
+    "weather": {
+      "type": "object",
+      "required": false
+    }
+  },
   "validations": [],
   "relations": {},
   "acls": [

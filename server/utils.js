@@ -1,8 +1,34 @@
 'use strict';
-var cron = require('node-cron');
-var request = require('superagent');
+var cheerio = require('cheerio');
+var jsonframe = require('jsonframe-cheerio');
+var http = require('http');
+var Promise = require('bluebird');
 
-var teamMap = [
+module.exports = {
+  scrape: function(host, path, frame) {
+    return new Promise(function(resolve, reject) {
+      var options = {
+          host: host,
+          path: path,
+      };
+      var request = http.request(options, function(res) {
+          var data = '';
+          res.on('data', function(chunk) {
+              data += chunk;
+          });
+          res.on('end', function() {
+            var $ = cheerio.load(data);
+            jsonframe($);
+            resolve($('body').scrape(frame));
+          });
+      });
+      request.on('error', function(e) {
+          reject(e.message);
+      });
+      request.end();
+    });
+  },
+  teamMap: [
   {
     'name': 'Cardinals',
     'location': {'lat': 33.527594, 'lon': -112.262586},
@@ -163,51 +189,5 @@ var teamMap = [
     'location': {'lat': 44.501253, 'lon': -88.061656},
     'dome': false,
   },
-];
-
-module.exports = function(app) {
-  console.log('Starting boot script 7');
-  var Weather = app.models.Weather;
-  var apiKey = process.env.WEATHER_API_KEY;
-  cron.schedule('0 0 * * * *', function() {
-    // Get current season and week in NFL
-    console.log('Fetching weather data');
-    teamMap.forEach(function(team) {
-      console.log('processing weather for ', team.name);
-      request.get('http://api.openweathermap.org/data/2.5/weather')
-      .query({lat: team.location.lat, lon: team.location.lon, appid: apiKey}) // query string
-      .end(function(err, res) {
-        if (!res) {
-          console.log('No response from weather api');
-          return;
-        }
-        var condition = {
-          id: res.body.weather[0].id,
-          temp: res.body.main.temp ? res.body.main.temp - 273.15 : 0,
-          name: res.body.name,
-          description: res.body.weather[0].description,
-          icon: res.body.weather[0].icon,
-          iconUrl: 'http://openweathermap.org/img/w/' + res.body.weather[0].icon + '.png',
-        };
-        console.log('weather response for ', team.name);
-        var todayDate = new Date().toJSON().slice(0, 10).replace(/-/g, '-');
-
-        Weather.upsertWithWhere(
-          {team: team.name, createdDate: todayDate},
-          {
-            team: team.name, location: team.location, dome: team.dome,
-            condition: condition, lastModified: new Date(),
-            createdDate: todayDate,
-          }
-        )
-        .then(function(weather) {
-          console.log('added weather details successfully');
-        })
-        .catch(function(error) {
-          console.log('Error creating weather', error);
-        });
-      });
-    });
-  });
-  console.log('Finished boot script 7');
+],
 };
