@@ -33,14 +33,6 @@
       "type": "date"
     }
   },
-  "indexes": {
-    "team_create_date_index": {
-      "keys": {"team": 1, "createdDate": -1},
-      "options": {
-         "unique": true
-       }
-    }
-  },
   "validations": [],
   "relations": {},
   "acls": [],
