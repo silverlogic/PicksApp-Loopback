@@ -14,9 +14,6 @@
     "date": {
       "type": "string"
     },
-    "type": {
-      "type": "integer"
-    },
     "gameStatus": {
       "type": "string",
       "required": false
@@ -65,15 +62,6 @@
   "methods": {
     "historical": {
       "accepts": [
-        {
-          "arg": "leagueType",
-          "type": "number",
-          "required": true,
-          "description": "The sports league to get a schedule from. For NFL, use 0.",
-          "http": {
-            "source": "query"
-          }
-        },
         {
           "arg": "season",
           "type": "number",
@@ -157,24 +145,6 @@
     },
     "mock": {
       "accepts": [
-        {
-          "arg": "leagueType",
-          "type": "number",
-          "required": true,
-          "description": "The sports league to get a schedule from. For NFL, use 0.",
-          "http": {
-            "source": "query"
-          }
-        },
-        {
-          "arg": "timePeriod",
-          "type": "number",
-          "required": true,
-          "description": "The period in time to use. Refer to sport scraper documentation for more info.",
-          "http": {
-            "source": "query"
-          }
-        }
       ],
       "returns": [
         {
