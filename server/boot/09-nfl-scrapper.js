@@ -101,7 +101,6 @@ module.exports = function(app) {
       ).then(function(result) {
         var total = result['schedules'].length;
         result['schedules'].forEach(function(schedule) {
-          console.log(schedule);
           var homeRecord = schedule['homeTeam']['record'].match(/\d+/g);
           var awayRecord = schedule['awayTeam']['record'].match(/\d+/g);
           schedule['homeTeam']['record'] = {
