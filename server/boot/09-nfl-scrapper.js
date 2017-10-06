@@ -17,29 +17,79 @@ module.exports = function(app) {
     var frame = {
       'schedules': {
         _s: '#score-boxes div div[class=scorebox-wrapper]\ ' +
-        'div[class=new-score-box-wrapper] div[class=new-score-box]',
+        'div[class=new-score-box-wrapper]',
         _d: [{
-          'status': '.game-center-area p span[class=time-left]',
+          'date': 'div[class=new-score-box-heading] p span[class=date]',
+          'gameStatus': 'div[class=new-score-box]\ ' +
+          '.game-center-area p span[class=time-left]',
           'homeTeam': {
-            'name': '.team-wrapper div[class=home-team]\ ' +
-            'div[class=team-data] div[class=team-info] p[class=team-name]',
-            'record': '.team-wrapper div[class=home-team]\ ' +
-            'div[class=team-data] div[class=team-info] p[class=team-record] a',
-            'score': '.team-wrapper div[class=home-team]\ ' +
+            'teamName': 'div[class=new-score-box]\ ' +
+            '.team-wrapper div[class=home-team]\ ' +
+            'div[class=team-data] div[class=team-info]\ ' +
+            'p[class=team-name]',
+            'record': 'div[class=new-score-box]\ ' +
+            '.team-wrapper div[class=home-team]\ ' +
+            'div[class=team-data] div[class=team-info]\ ' +
+            'p[class=team-record] a',
+            'score': 'div[class=new-score-box]\ ' +
+            '.team-wrapper div[class=home-team]\ ' +
             'div[class=team-data] p[class=total-score]',
-            'quartersScore': ['.team-wrapper\ ' +
-            'div[class=home-team] div[class=team-data]\ ' +
-            'p[class=quarters-score] span'],
+            'scoreByQuarter': {
+              'Q1': 'div[class=new-score-box]\ ' +
+              '.team-wrapper div[class=away-team]\ ' +
+            'div[class=team-data]\ ' +
+              'p[class=quarters-score] span[class=first-qt]',
+              'Q2': 'div[class=new-score-box]\ ' +
+              '.team-wrapper div[class=away-team]\ ' +
+            'div[class=team-data]\ ' +
+              'p[class=quarters-score] span[class=second-qt]',
+              'Q3': 'div[class=new-score-box]\ ' +
+              '.team-wrapper div[class=away-team]\ ' +
+            'div[class=team-data] p[class=quarters-score] span[class=third-qt]',
+              'Q4': 'div[class=new-score-box]\ ' +
+              '.team-wrapper div[class=away-team]\ ' +
+            'div[class=team-data] p[class=quarters-score]\ ' +
+              'span[class=fourth-qt]',
+              'OT': 'div[class=new-score-box]\ ' +
+              '.team-wrapper div[class=away-team]\ ' +
+            'div[class=team-data] p[class=quarters-score]\ ' +
+              'span[class=ot-qt]',
+            },
           },
           'awayTeam': {
-            'name': '.team-wrapper div[class=away-team]\ ' +
-            'div[class=team-data] div[class=team-info] p[class=team-name]',
-            'record': '.team-wrapper div[class=away-team]\ ' +
-            'div[class=team-data] div[class=team-info] p[class=team-record] a',
-            'score': '.team-wrapper div[class=away-team]\ ' +
+            'teamName': 'div[class=new-score-box]\ ' +
+            '.team-wrapper div[class=away-team]\ ' +
+            'div[class=team-data] div[class=team-info]\ ' +
+            'p[class=team-name]',
+            'record': 'div[class=new-score-box]\ ' +
+            '.team-wrapper div[class=away-team]\ ' +
+            'div[class=team-data] div[class=team-info]\ ' +
+            'p[class=team-record] a',
+            'score': 'div[class=new-score-box]\ ' +
+            '.team-wrapper div[class=away-team]\ ' +
             'div[class=team-data] p[class=total-score]',
-            'quartersScore': ['.team-wrapper div[class=away-team]\ ' +
-            'div[class=team-data] p[class=quarters-score] span'],
+            'scoreByQuarter': {
+              'Q1': 'div[class=new-score-box]\ ' +
+              '.team-wrapper div[class=away-team]\ ' +
+            'div[class=team-data] p[class=quarters-score]\ ' +
+              'span[class=first-qt]',
+              'Q2': 'div[class=new-score-box]\ ' +
+              '.team-wrapper div[class=away-team]\ ' +
+            'div[class=team-data] p[class=quarters-score]\ ' +
+              'span[class=second-qt]',
+              'Q3': 'div[class=new-score-box]\ ' +
+              '.team-wrapper div[class=away-team]\ ' +
+            'div[class=team-data] p[class=quarters-score]\ ' +
+              'span[class=third-qt]',
+              'Q4': 'div[class=new-score-box]\ ' +
+              '.team-wrapper div[class=away-team]\ ' +
+            'div[class=team-data] p[class=quarters-score]\ ' +
+              'span[class=fourth-qt]',
+              'OT': 'div[class=new-score-box]\ ' +
+              '.team-wrapper div[class=away-team]\ ' +
+            'div[class=team-data] p[class=quarters-score]\ ' +
+              'span[class=ot-qt]',
+            },
           },
         }],
       },
@@ -51,20 +101,34 @@ module.exports = function(app) {
       ).then(function(result) {
         var total = result['schedules'].length;
         result['schedules'].forEach(function(schedule) {
+          console.log(schedule);
+          var homeRecord = schedule['homeTeam']['record'].match(/\d+/g);
+          var awayRecord = schedule['awayTeam']['record'].match(/\d+/g);
+          schedule['homeTeam']['record'] = {
+            'losses': homeRecord[0],
+            'ties': homeRecord[1],
+            'wins': homeRecord[2],
+          };
+          schedule['awayTeam']['record'] = {
+            'losses': awayRecord[0],
+            'ties': awayRecord[1],
+            'wins': awayRecord[2],
+          };
           Schedule.upsertWithWhere(
             {
-              year: year, week: week,
-              homeTeamName: schedule['homeTeam']['name'],
+              season: year, week: week,
+              homeTeamName: schedule['homeTeam']['teamName'],
             }, {
-            year: year, week: week, timeLeft: schedule['status'],
-            homeTeamName: schedule['homeTeam']['name'],
+            year: year, week: week, gameStatus: schedule['gameStatus'],
+            homeTeamName: schedule['homeTeam']['teamName'],
             homeTeam: schedule['homeTeam'],
             awayTeam: schedule['awayTeam'],
+            date: schedule['date'],
           }).then(function(res) {
             console.log('saved schedule successful', res.id, res.week);
             if (
-              schedule['homeTeam']['name'] ===
-              result['schedules'][total - 1]['homeTeam']['name']
+              schedule['homeTeam']['teamName'] ===
+              result['schedules'][total - 1]['homeTeam']['teamName']
             ) {
               console.log('processed week', week);
               if (week === 17) {

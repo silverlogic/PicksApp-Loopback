@@ -11,13 +11,19 @@
     }
   },
   "properties": {
-    "timeLeft": {
-      "type": "string",
-      "required": true
+    "date": {
+      "type": "string"
     },
-    "year": {
+    "type": {
+      "type": "integer"
+    },
+    "gameStatus": {
       "type": "string",
-      "required": true
+      "required": false
+    },
+    "season": {
+      "type": "string",
+      "required": false
     },
     "week": {
       "type": "string",
