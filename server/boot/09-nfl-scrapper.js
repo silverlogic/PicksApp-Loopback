@@ -10,7 +10,7 @@ module.exports = function(app) {
   var Schedule = app.models.Schedule;
    var week = 1;
    var year = 2001;
-  cron.schedule('1 * * * * *', function() {
+  cron.schedule('0 0 * * * *', function() {
     // Get current season and week in NFL
     console.log('Scraping NFL for schedules');
 
@@ -101,7 +101,6 @@ module.exports = function(app) {
       ).then(function(result) {
         var total = result['schedules'].length;
         result['schedules'].forEach(function(schedule) {
-          console.log(schedule);
           var homeRecord = schedule['homeTeam']['record'].match(/\d+/g);
           var awayRecord = schedule['awayTeam']['record'].match(/\d+/g);
           schedule['homeTeam']['record'] = {
@@ -119,7 +118,7 @@ module.exports = function(app) {
               season: year, week: week,
               homeTeamName: schedule['homeTeam']['teamName'],
             }, {
-            year: year, week: week, gameStatus: schedule['gameStatus'],
+            season: year, week: week, gameStatus: schedule['gameStatus'],
             homeTeamName: schedule['homeTeam']['teamName'],
             homeTeam: schedule['homeTeam'],
             awayTeam: schedule['awayTeam'],
