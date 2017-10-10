@@ -46,7 +46,7 @@ module.exports = function(app) {
   var Schedule = app.models.Schedule;
   var nfl, winners, currentSeason, loadedSeasons;
   // Setup scheduler for updating picks every hour
-  cron.schedule('1 * * * * *', function() {
+  cron.schedule('0 0 * * * *', function() {
     // Get current season and week in NFL
     Nfl.findOne()
     .then(function(nflModel) {
