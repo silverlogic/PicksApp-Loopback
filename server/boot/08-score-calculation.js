@@ -3,6 +3,7 @@ var cron = require('node-cron');
 var moment = require('moment');
 var Promise = require('bluebird');
 var async = require('async');
+var utils = require('../utils');
 
 function showError(message, status, code) {
   var missingValuesError = new Error();
@@ -16,10 +17,10 @@ function getWinners(schedules) {
   return new Promise(function(resolve, reject) {
     var winners = [];
     schedules.forEach(function(schedule) {
-      if (schedule['gameStatus'] == 'FINAL ' ||
-          schedule['gameStatus'] == 'FINAL OT') {
-        var awayTeam = schedule['awayTeam'];
-        var homeTeam = schedule['homeTeam'];
+      if (schedule.gameStatus == 'FINAL' ||
+          schedule.gameStatus == 'FINAL OT') {
+        var awayTeam = schedule.awayTeam;
+        var homeTeam = schedule.homeTeam;
         if (homeTeam['score'] > awayTeam['score']) {
           winners.push(homeTeam['teamName']);
         } else {
@@ -42,10 +43,10 @@ module.exports = function(app) {
   var Week = app.models.Week;
   var Score = app.models.Score;
   var Pick = app.models.Pick;
-  var ScheduleScrapper = app.dataSources.ScheduleScrapper;
+  var Schedule = app.models.Schedule;
   var nfl, winners, currentSeason, loadedSeasons;
   // Setup scheduler for updating picks every hour
-  cron.schedule('0 0 * * * *', function() {
+  cron.schedule('1 * * * * *', function() {
     // Get current season and week in NFL
     Nfl.findOne()
     .then(function(nflModel) {
@@ -54,7 +55,9 @@ module.exports = function(app) {
       currentSeason = nfl.currentSeason;
       if (nodeEnvironment == 'production') {
         // Get live schedule for current season and week
-        return ScheduleScrapper.live(0, nfl.currentSeason, nfl.currentWeek);
+        return Schedule.find({
+          where: {season: nfl.currentSeason, week: nfl.currentWeek},
+        });
       } else {
         // Use mock-schedule for testing purposes
         // Determine which one to use based on server time
@@ -63,15 +66,15 @@ module.exports = function(app) {
         if (currentHour == 19) {
           // Current hour is 8:00pm
           // Retrieve mock schedule for all games completed
-          return ScheduleScrapper.mock(0, 2);
+          return utils.mockedData;
         } else if (currentHour >= 13 && currentHour <= 18) {
           // Current hour is between 1:00pm and 7:00pm
           // Retrieve mock schedule for some games completed
-          return ScheduleScrapper.mock(0, 1);
+          return utils.mockedDataIncomplete;
         } else {
           // Current hour is between 9:00pm and 12:00pm
           // Retrieve mock schedule for no games completed
-          return ScheduleScrapper.mock(0, 0);
+          return utils.mockedDataNoGame;
         }
      }
     })
@@ -79,6 +82,7 @@ module.exports = function(app) {
     .then(function(schedules) {
       getWinners(schedules).then(function(result) {
         winners = result;
+        console.log('winners', winners);
         Season.find(
           {where: {season: nfl.currentSeason}}
         ).then(function(seasons) {
@@ -134,7 +138,29 @@ module.exports = function(app) {
                   // Update week
                   nfl.currentWeek += 1;
                 }
-                nfl.save();
+                nfl.save().then(function(nfl) {
+                  if (currentSeason == nfl.currentSeason) {
+                    console.log('Updating seasons with new week',
+                      nfl.currentWeek);
+                    // Only need to update current week for each season
+                    async.eachLimit(loadedSeasons, 1, function(season, cb) {
+                      Week.upsertWithWhere(
+                        {season: season.id, week: nfl.currentWeek},
+                        {season: season.id, week: nfl.currentWeek}
+                      )
+                      .then(function() {
+                        cb();
+                      });
+                    }, function(error) {
+                      console.log(
+                        'All current seasons have been updated; error:',
+                        error
+                      );
+                    });
+                  } else {
+                    console.log('new seasons entered', nfl.currentSeason);
+                  }
+                });
               }
             }
           });
@@ -142,25 +168,6 @@ module.exports = function(app) {
       }).catch(function(error) {
         console.log('Error', error);
       });
-    })
-
-    .then(function() {
-      // Check if new seasons need to be created or not
-      if (currentSeason == nfl.currentSeason) {
-        console.log('Updating seasons with new week');
-        // Only need to update current week for each season
-        async.eachLimit(loadedSeasons, 1, function(season, cb) {
-          Week.upsertWithWhere(
-            {season: season.id, week: nfl.currentWeek},
-            {season: season.id, week: nfl.currentWeek}
-          )
-          .then(function() {
-            cb();
-          });
-        }, function(error) {
-          console.log('All current seasons have been updated', error);
-        });
-      }
     });
   });
   console.log('Finished boot script 8');

@@ -8,8 +8,15 @@ var http = require('http');
 module.exports = function(app) {
   console.log('Starting boot script 9');
   var Schedule = app.models.Schedule;
-   var week = 1;
-   var year = 2001;
+  var Nfl = app.models.Nfl;
+  var week = 1;
+  var maxWeek = 17;
+  var year = 2001;
+  var maxYear = 2017;
+  Nfl.findOne().then(function(nfl) {
+    maxYear = nfl.currentSeason;
+    console.log('max week year', maxWeek, maxYear);
+  });
   cron.schedule('0 0 * * * *', function() {
     // Get current season and week in NFL
     console.log('Scraping NFL for schedules');
@@ -95,7 +102,7 @@ module.exports = function(app) {
       },
     };
 
-    if (week < 18 && year < 2018) {
+    if (week <= maxWeek && year < maxYear) {
       utils.scrape(
         'www.nfl.com', '/scores/' + year + '/REG' + week, frame
       ).then(function(result) {
@@ -130,7 +137,7 @@ module.exports = function(app) {
               result['schedules'][total - 1]['homeTeam']['teamName']
             ) {
               console.log('processed week', week);
-              if (week === 17) {
+              if (week === maxWeek) {
                 week = 1;
                 year++;
               } else {
