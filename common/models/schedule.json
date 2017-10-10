@@ -41,6 +41,18 @@
     "weather": {
       "type": "object",
       "required": false
+    },
+    "rushYards": {
+      "type": "string",
+      "required": false
+    },
+    "passYards": {
+      "type": "string",
+      "required": false
+    },
+    "recYards": {
+      "type": "string",
+      "required": false
     }
   },
   "validations": [],
