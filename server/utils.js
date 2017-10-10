@@ -2,6 +2,7 @@
 var cheerio = require('cheerio');
 var jsonframe = require('jsonframe-cheerio');
 var http = require('http');
+var https = require('https');
 var Promise = require('bluebird');
 
 module.exports = {
@@ -12,6 +13,29 @@ module.exports = {
           path: path,
       };
       var request = http.request(options, function(res) {
+          var data = '';
+          res.on('data', function(chunk) {
+              data += chunk;
+          });
+          res.on('end', function() {
+            var $ = cheerio.load(data);
+            jsonframe($);
+            resolve($('body').scrape(frame));
+          });
+      });
+      request.on('error', function(e) {
+          reject(e.message);
+      });
+      request.end();
+    });
+  },
+  scrapeHttps: function(host, path, frame) {
+    return new Promise(function(resolve, reject) {
+      var options = {
+          host: host,
+          path: path,
+      };
+      var request = https.request(options, function(res) {
           var data = '';
           res.on('data', function(chunk) {
               data += chunk;
