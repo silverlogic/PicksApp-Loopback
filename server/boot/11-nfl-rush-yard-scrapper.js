@@ -10,7 +10,7 @@ module.exports = function(app) {
    var week = 1;
    var year = 2001;
 
-  cron.schedule('1 * * * * *', function() {
+  cron.schedule('0 0 * * * *', function() {
     // Get current season and week in NFL
     console.log('Scraping NFL Rush yard for schedules');
 

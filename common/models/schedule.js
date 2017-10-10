@@ -117,14 +117,17 @@ module.exports = function(Schedule) {
   * @param {Function(Error, object)} callback
   */
   Schedule.current = function(leagueType, callback) {
-    var ScheduleScrapper = Schedule.app.dataSources.ScheduleScrapper;
-    ScheduleScrapper.current(leagueType)
-    .then(function(result) {
-      callback(null, result);
-    })
-    .catch(function(error) {
+    var Nfl = Schedule.app.models.Nfl;
+    Nfl.findOne().then(function(nfl) {
+      Schedule.find({
+        where: {week: nfl.currentWeek, season: nfl.currentSeason},
+      }).then(function(result) {
+        callback(null, result);
+      })
+      .catch(function(error) {
       console.log('Error getting current season and week number');
       callback(error, null);
+    });
     });
   };
 };
