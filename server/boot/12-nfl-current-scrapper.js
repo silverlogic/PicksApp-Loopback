@@ -17,7 +17,7 @@ module.exports = function(app) {
     year = nfl.currentSeason;
   });
 
-  cron.schedule('1 * * * * *', function() {
+  cron.schedule('0 0 * * * *', function() {
     // Get current season and week in NFL
     console.log('Scraping NFL for current schedules');
 
