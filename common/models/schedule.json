@@ -22,6 +22,10 @@
       "type": "string",
       "required": false
     },
+    "seasonType": {
+      "type": "string",
+      "required": false
+    },
     "week": {
       "type": "string",
       "required": true
@@ -29,6 +33,10 @@
     "homeTeamName": {
       "type": "string",
       "required": true
+    },
+    "winnerName": {
+      "type": "string",
+      "required": false
     },
     "homeTeam": {
       "type": "object",
@@ -42,8 +50,28 @@
       "type": "object",
       "required": false
     },
+    "odds": {
+      "type": "object",
+      "required": false
+    },
+    "detailsLink": {
+      "type": "string",
+      "required": false
+    },
+     "details": {
+      "type": "object",
+      "required": false
+    },
     "rushYards": {
       "type": "string",
+      "required": false
+    },
+    "spreads": {
+      "type": "string",
+      "required": false
+    },
+    "venue": {
+      "type": "object",
       "required": false
     },
     "passYards": {
