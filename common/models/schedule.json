@@ -62,24 +62,12 @@
       "type": "object",
       "required": false
     },
-    "rushYards": {
-      "type": "string",
-      "required": false
-    },
     "spreads": {
       "type": "string",
       "required": false
     },
     "venue": {
       "type": "object",
-      "required": false
-    },
-    "passYards": {
-      "type": "string",
-      "required": false
-    },
-    "recYards": {
-      "type": "string",
       "required": false
     }
   },
