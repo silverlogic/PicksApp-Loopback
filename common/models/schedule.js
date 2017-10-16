@@ -74,7 +74,6 @@ module.exports = function(Schedule) {
       callback(error, null);
     });
   };
-
   /**
   * Finds live, granular score data on a given season and week.
   * @param {number} leagueType The sports league to get a schedule from. For

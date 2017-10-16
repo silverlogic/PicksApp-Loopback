@@ -41,22 +41,17 @@ function getTeamObject(data) {
 }
 
 module.exports = function(app) {
-  console.log('Starting boot script 14');
+  console.log('Starting boot script 17');
   var Schedule = app.models.Schedule;
   var Nfl = app.models.Nfl;
   var week = 1;
-  var season = 2000;
-  var maxSeason = 2017;
+  var season = 2017;
   var seasonType = 2;
-  var maxWeek = 17;
   Nfl.findOne().then(function(nfl) {
-    maxSeason = nfl.currentSeason;
+    season = nfl.currentSeason;
+    week = nfl.currentWeek;
   });
-  cron.schedule('1 * * * * *', function() {
-    if (season <= maxSeason && week > maxWeek) {
-      console.log('week and season out of bound');
-      return;
-    }
+  cron.schedule('0 0 * * * *', function() {
     // Get current season and week in NFL
     console.log('Fetching schedule from espn');
     request.get('http://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard')// dates=2017&weeks=6&seasontype=2&sport=football&league=nfl
@@ -96,19 +91,6 @@ module.exports = function(app) {
               gameId: game.id,
             }).then(function(res) {
               console.log('saved schedule successful', res.id, res.week);
-              if (
-                game['competitions'][0]['competitors'][0]['team']['name'] ===
-                events[total - 1]['competitions'][0]
-                  ['competitors'][0]['team']['name']
-              ) {
-                console.log('processed week', week);
-                if (week === maxWeek) {
-                  week = 1;
-                  season++;
-                } else {
-                  week++;
-                }
-              }
             }).catch(function(error) {
               console.log('error creating schedule', error);
             });
@@ -116,5 +98,5 @@ module.exports = function(app) {
         }
       });
   });
-  console.log('Finished boot script 14');
+  console.log('Finished boot script 17');
 };

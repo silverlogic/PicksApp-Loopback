@@ -10,23 +10,18 @@ function getTeamIndex(competitors, homeAway) {
 }
 
 module.exports = function(app) {
-  console.log('Starting boot script 15');
+  console.log('Starting boot script 12');
   var Schedule = app.models.Schedule;
   var Nfl = app.models.Nfl;
   var week = 1;
   var season = 2012;
-  var maxSeason = 2017;
-  var maxWeek = 17;
   var seasonType = 2;
   Nfl.findOne().then(function(nfl) {
-    maxSeason = nfl.currentSeason;
+    season = nfl.currentSeason;
+    week = nfl.currentWeek;
   });
-  cron.schedule('2 * * * * *', function() {
+  cron.schedule('0 0 * * * *', function() {
     // Get current season and week in NFL
-    if (season <= maxSeason && week > maxWeek) {
-      console.log('week and season out of bound');
-      return;
-    }
     console.log('Fetching schedule from espn');
     request.get('http://site.api.espn.com/apis/v2/scoreboard/header')
       .query({
@@ -42,7 +37,6 @@ module.exports = function(app) {
         var leagues = res.body.sports[0].leagues;
 
         if (leagues.length) {
-          var total = leagues[0].events.length;
           leagues[0].events.forEach(function(game) {
             var homeTeam = game.competitors[
               getTeamIndex(game.competitors, 'home')
@@ -57,18 +51,6 @@ module.exports = function(app) {
               spreads: game.odds.details,
             }).then(function(res) {
               console.log('updated schedule successful', res.id, res.week);
-              if (
-                game['competitors'][0]['name'] ===
-                leagues[0].events[total - 1]['competitors'][0]['name']
-              ) {
-                console.log('processed week', week);
-                if (week === maxWeek) {
-                  week = 1;
-                  season++;
-                } else {
-                  week++;
-                }
-              }
             }).catch(function(error) {
               console.log('error creating schedule', error);
             });
@@ -76,5 +58,5 @@ module.exports = function(app) {
         }
       });
   });
-  console.log('Finished boot script 15');
+  console.log('Finished boot script 12');
 };

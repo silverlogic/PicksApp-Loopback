@@ -54,11 +54,11 @@
       "type": "object",
       "required": false
     },
-    "detailsLink": {
+    "gameId": {
       "type": "string",
       "required": false
     },
-     "details": {
+     "stats": {
       "type": "object",
       "required": false
     },
