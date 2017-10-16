@@ -1,7 +1,8 @@
 'use strict';
 var Promise = require('bluebird');
+var utils = require('../../server/utils');
 
-function getWeather(Weather, result) {
+function getMockedWeather(Weather, result) {
   var weatherResults = [];
   return new Promise(function(resolve, reject) {
     var lastIndex = result.length - 1;
@@ -39,7 +40,22 @@ function getWeather(Weather, result) {
 
 module.exports = function(Schedule) {
   // Remote Methods
-
+  Schedule.disableRemoteMethodByName('create');
+  Schedule.disableRemoteMethodByName('upsert');
+  Schedule.disableRemoteMethodByName('upsertWithWhere');
+  Schedule.disableRemoteMethodByName('updateAll');
+  Schedule.disableRemoteMethodByName('prototype.updateAttributes');
+  Schedule.disableRemoteMethodByName('prototype.updateAttribute');
+  Schedule.disableRemoteMethodByName('prototype.verify');
+  Schedule.disableRemoteMethodByName('replaceOrCreate');
+  Schedule.disableRemoteMethodByName('replaceById');
+  Schedule.disableRemoteMethodByName('createChangeStream');
+  Schedule.disableRemoteMethodByName('find');
+  Schedule.disableRemoteMethodByName('findOne');
+  Schedule.disableRemoteMethodByName('deleteById');
+  Schedule.disableRemoteMethodByName('confirm');
+  Schedule.disableRemoteMethodByName('count');
+  Schedule.disableRemoteMethodByName('exists');
   /**
   * Finds historical score data based on a given season and week.
   * @param {number} leagueType The sports league to get a schedule from. For
@@ -48,23 +64,16 @@ module.exports = function(Schedule) {
   * @param {number} week The week in the given season.
   * @param {Function(Error, array)} callback
   */
-  Schedule.historical = function(leagueType, season, week, callback) {
-    var ScheduleScrapper = Schedule.app.dataSources.ScheduleScrapper;
-    var Weather = Schedule.app.models.Weather;
-
-    ScheduleScrapper.historical(leagueType, season, week)
-    .then(function(result) {
-      var promise = getWeather(Weather, result);
-      promise.then(function(result) {
-        callback(null, result);
-      });
+  Schedule.historical = function(season, week, callback) {
+    Schedule.find({where: {season: season, week: week}})
+    .then(function(results) {
+      callback(null, results);
     })
     .catch(function(error) {
       console.log('Error retrieving schedule');
       callback(error, null);
     });
   };
-
   /**
   * Finds live, granular score data on a given season and week.
   * @param {number} leagueType The sports league to get a schedule from. For
@@ -78,7 +87,7 @@ module.exports = function(Schedule) {
     var Weather = Schedule.app.models.Weather;
     ScheduleScrapper.live(leagueType, season, week)
     .then(function(result) {
-      var promise = getWeather(Weather, result);
+      var promise = getMockedWeather(Weather, result);
       promise.then(function(result) {
         callback(null, result);
       });
@@ -97,20 +106,8 @@ module.exports = function(Schedule) {
                                documentation for more info.
   * @param {Function(Error, array)} callback
   */
-  Schedule.mock = function(leagueType, timePeriod, callback) {
-    var ScheduleScrapper = Schedule.app.dataSources.ScheduleScrapper;
-    var Weather = Schedule.app.models.Weather;
-    ScheduleScrapper.mock(leagueType, timePeriod)
-    .then(function(result) {
-      var promise = getWeather(Weather, result);
-      promise.then(function(result) {
-        callback(null, result);
-      });
-    })
-    .catch(function(error) {
-      console.log('Error getting mock schedule');
-      callback(error, null);
-    });
+  Schedule.mock = function(callback) {
+    callback(null, utils.mockedData);
   };
 
   /**
@@ -119,14 +116,17 @@ module.exports = function(Schedule) {
   * @param {Function(Error, object)} callback
   */
   Schedule.current = function(leagueType, callback) {
-    var ScheduleScrapper = Schedule.app.dataSources.ScheduleScrapper;
-    ScheduleScrapper.current(leagueType)
-    .then(function(result) {
-      callback(null, result);
-    })
-    .catch(function(error) {
+    var Nfl = Schedule.app.models.Nfl;
+    Nfl.findOne().then(function(nfl) {
+      Schedule.find({
+        where: {week: nfl.currentWeek, season: nfl.currentSeason},
+      }).then(function(result) {
+        callback(null, result);
+      })
+      .catch(function(error) {
       console.log('Error getting current season and week number');
       callback(error, null);
+    });
     });
   };
 };

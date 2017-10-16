@@ -1,6 +1,7 @@
 'use strict';
 var cron = require('node-cron');
 var request = require('superagent');
+var utils = require('../utils');
 
 var teamMap = [
   {
@@ -172,7 +173,7 @@ module.exports = function(app) {
   cron.schedule('0 0 * * * *', function() {
     // Get current season and week in NFL
     console.log('Fetching weather data');
-    teamMap.forEach(function(team) {
+    utils.teamMap.forEach(function(team) {
       console.log('processing weather for ', team.name);
       request.get('http://api.openweathermap.org/data/2.5/weather')
       .query({lat: team.location.lat, lon: team.location.lon, appid: apiKey}) // query string
