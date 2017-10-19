@@ -41,7 +41,7 @@ function getTeamObject(data) {
 }
 
 module.exports = function(app) {
-  console.log('Starting boot script 17');
+  console.log('Starting boot script 12');
   var Schedule = app.models.Schedule;
   var Nfl = app.models.Nfl;
   var week = 1;
@@ -98,5 +98,5 @@ module.exports = function(app) {
         }
       });
   });
-  console.log('Finished boot script 17');
+  console.log('Finished boot script 12');
 };
