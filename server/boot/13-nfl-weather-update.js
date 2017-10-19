@@ -2,7 +2,7 @@
 var cron = require('node-cron');
 
 module.exports = function(app) {
-  console.log('Starting boot script 10');
+  console.log('Starting boot script 13');
   var Weather = app.models.Weather;
   var Schedule = app.models.Schedule;
   var Nfl = app.models.Nfl;
@@ -33,6 +33,6 @@ module.exports = function(app) {
     }).catch(function(error) {
         console.log('schedule find error', error);
       });
-    console.log('Finished boot script 10');
+    console.log('Finished boot script 13');
   });
 };

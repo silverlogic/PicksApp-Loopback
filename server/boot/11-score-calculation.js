@@ -35,7 +35,7 @@ function getWinners(schedules) {
 }
 
 module.exports = function(app) {
-  console.log('Starting boot script 8');
+  console.log('Starting boot script 11');
   console.log('Setting up schedulers');
   var nodeEnvironment = process.env.NODE_ENV;
   var Nfl = app.models.Nfl;
@@ -170,5 +170,5 @@ module.exports = function(app) {
       });
     });
   });
-  console.log('Finished boot script 8');
+  console.log('Finished boot script 11');
 };
